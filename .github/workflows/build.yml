@@ -21,10 +21,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.7'
 
-      - name: Auto-Fix Project Structure
+      - name: Extract Project and Generate Wrapper
         run: |
           # 1. Extract zip file
           ZIP_FILE=$(find . -maxdepth 2 -type f \( -name "*.zip" -o -name "*.ZIP" \) | head -n 1)
@@ -33,23 +31,10 @@ jobs:
             unzip -o "$ZIP_FILE"
           fi
 
-          # 2. Fix AndroidManifest path if needed
-          if [ -f "app/AndroidManifest.xml" ] && [ ! -f "app/src/main/AndroidManifest.xml" ]; then
-            mkdir -p app/src/main
-            cp app/AndroidManifest.xml app/src/main/AndroidManifest.xml
-          fi
-
-          # 3. Create root build.gradle.kts with proper plugin versions
-          cat << 'EOF' > build.gradle.kts
-          plugins {
-              id("com.android.application") version "8.3.2" apply false
-              id("org.jetbrains.kotlin.android") version "1.9.23" apply false
-          }
-          EOF
-
-          # 4. Generate Gradle wrapper
+          # 2. Generate missing gradlew script
           if [ ! -f "gradlew" ]; then
-            gradle wrapper --gradle-version 8.7
+            echo "Generating gradlew from project wrapper..."
+            gradle wrapper
           fi
           chmod +x gradlew
 
