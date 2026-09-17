@@ -22,7 +22,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Extract Project, Clean Duplicates & Setup Keystore
+      - name: Extract Project, Setup Firebase, Images & Keystore
         run: |
           # 1. Extract zip file
           ZIP_FILE=$(find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.ZIP" \) | head -n 1)
@@ -31,21 +31,27 @@ jobs:
             unzip -o "$ZIP_FILE"
           fi
 
-          # 2. Fix Duplicate Resources (Delete old webp and xml duplicates)
-          echo "Cleaning up duplicate icons and vector files..."
+          # 2. Setup Firebase google-services.json
+          if [ -f "google-services.json" ]; then
+            echo "Placing google-services.json into app directory..."
+            cp -f google-services.json app/google-services.json
+          fi
+
+          # 3. Clean duplicate webp and vector icons
+          echo "Cleaning duplicate files..."
           find app/src/main/res/ -name "ic_launcher*.webp" -delete || true
           find app/src/main/res/ -name "ic_launcher*.xml" -delete || true
           find app/src/main/res/ -name "app_banner*.xml" -delete || true
           rm -rf app/src/main/res/mipmap-anydpi-v26 || true
 
-          # 3. Setup app_banner.png
+          # 4. Setup app_banner.png
           if [ -f "app_banner.png" ]; then
             echo "Applying app_banner.png..."
             mkdir -p app/src/main/res/drawable
             cp -f app_banner.png app/src/main/res/drawable/app_banner.png
           fi
 
-          # 4. Setup ic_launcher.png across mipmap folders
+          # 5. Setup ic_launcher.png across mipmap folders
           if [ -f "ic_launcher.png" ]; then
             echo "Applying ic_launcher.png..."
             for dir in app/src/main/res/mipmap-*; do
@@ -56,13 +62,13 @@ jobs:
             cp -f ic_launcher.png app/src/main/res/drawable/ic_launcher.png
           fi
 
-          # 5. Generate missing gradlew script
+          # 6. Generate missing gradlew script
           if [ ! -f "gradlew" ]; then
             gradle wrapper
           fi
           chmod +x gradlew
 
-          # 6. Generate debug.keystore
+          # 7. Generate debug.keystore
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           mkdir -p ~/.android
           cp debug.keystore ~/.android/debug.keystore
@@ -75,6 +81,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: APSTools-Final-APK
+          name: APSTools-Production-APK
           path: '**/build/outputs/apk/debug/*.apk'
           
