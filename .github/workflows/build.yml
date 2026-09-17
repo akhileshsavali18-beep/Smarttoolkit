@@ -24,30 +24,38 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Prepare Project and Wrapper
+      - name: Auto-Fix Project Structure
         run: |
-          # Extract zip file
+          # 1. Extract zip file
           ZIP_FILE=$(find . -maxdepth 2 -type f \( -name "*.zip" -o -name "*.ZIP" \) | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "Extracting $ZIP_FILE..."
             unzip -o "$ZIP_FILE"
           fi
 
-          # Ensure root build.gradle.kts exists
-          if [ ! -f "build.gradle.kts" ] && [ ! -f "build.gradle" ]; then
-            touch build.gradle.kts
+          # 2. Fix AndroidManifest path if needed
+          if [ -f "app/AndroidManifest.xml" ] && [ ! -f "app/src/main/AndroidManifest.xml" ]; then
+            mkdir -p app/src/main
+            cp app/AndroidManifest.xml app/src/main/AndroidManifest.xml
           fi
 
-          # Generate Gradle wrapper if missing
+          # 3. Create root build.gradle.kts with proper plugin versions
+          cat << 'EOF' > build.gradle.kts
+          plugins {
+              id("com.android.application") version "8.3.2" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.23" apply false
+          }
+          EOF
+
+          # 4. Generate Gradle wrapper
           if [ ! -f "gradlew" ]; then
-            echo "Generating Gradle wrapper..."
             gradle wrapper --gradle-version 8.7
           fi
           chmod +x gradlew
 
       - name: Build Android APK
         run: |
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
