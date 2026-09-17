@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Play Store Bundle & APK
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Extract Project, Setup Firebase, Images & Keystore
+      - name: Extract Project, Setup Assets & Keystore
         run: |
           # 1. Extract zip file
           ZIP_FILE=$(find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.ZIP" \) | head -n 1)
@@ -68,19 +68,46 @@ jobs:
           fi
           chmod +x gradlew
 
-          # 7. Generate debug.keystore
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          mkdir -p ~/.android
-          cp debug.keystore ~/.android/debug.keystore
-          cp debug.keystore app/debug.keystore || true
+          # 7. Create Permanent Production Release Keystore
+          keytool -genkey -v \
+            -keystore my-upload-key.jks \
+            -alias upload \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "apslabs123" \
+            -keypass "apslabs123" \
+            -dname "CN=APS Labs, OU=Mobile Development, O=APS Labs, L=Ainapur, ST=Karnataka, C=IN"
 
-      - name: Build Android APK
+          cp my-upload-key.jks app/my-upload-key.jks
+
+      - name: Build Signed Release Bundle (.aab)
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+          STORE_PASSWORD: "apslabs123"
+          KEY_PASSWORD: "apslabs123"
         run: |
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew bundleRelease --no-daemon
 
-      - name: Upload APK
+      - name: Build Signed Release APK (For Testing)
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+          STORE_PASSWORD: "apslabs123"
+          KEY_PASSWORD: "apslabs123"
+        run: |
+          ./gradlew assembleRelease --no-daemon || ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Play Store Bundle (.aab) & Keystore
         uses: actions/upload-artifact@v4
         with:
-          name: APSTools-Production-APK
-          path: '**/build/outputs/apk/debug/*.apk'
+          name: APSTools-PlayStore-Release
+          path: |
+            **/build/outputs/bundle/release/*.aab
+            my-upload-key.jks
+
+      - name: Upload Test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APSTools-Release-APK
+          path: '**/build/outputs/apk/**/*.apk'
           
