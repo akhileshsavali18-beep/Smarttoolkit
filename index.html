@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APS TOOLS - All-in-One Offline Smart Toolkit</title>
+    <title>APS TOOLS - All-in-One 50+ Offline Utilities</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -12,37 +12,28 @@
 </head>
 <body class="bg-[#070b14] text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
 
-    <!-- Header Navigation with Logo & Hamburger Menu -->
+    <!-- Header Navigation with App Icon & Clean Title -->
     <header class="border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-50 bg-[#070b14]/90 px-6 py-4">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             
-            <!-- Brand Logo -->
+            <!-- Real App Icon & Brand Name -->
             <a href="index.html" class="flex items-center space-x-3 group">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
-                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                        <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
-                    </svg>
-                </div>
-                <div>
-                    <span class="text-xl font-extrabold tracking-tight text-white block leading-none">APS TOOLS</span>
-                    <span class="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Akhilesh Systems</span>
-                </div>
+                <img src="ic_launcher.png" alt="APS TOOLS" class="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform" onerror="this.src='https://via.placeholder.com/40/2563eb/ffffff?text=APS'" />
+                <span class="text-xl font-extrabold tracking-tight text-white block leading-none">APS TOOLS</span>
             </a>
 
-            <!-- Desktop Navigation Links -->
+            <!-- Desktop Navigation -->
             <nav class="hidden md:flex items-center space-x-6 text-sm font-semibold text-slate-300">
                 <a href="index.html" class="text-white hover:text-blue-400 transition">Home</a>
-                <a href="#features" class="hover:text-blue-400 transition">Tools & Features</a>
-                <a href="donate.html" class="hover:text-blue-400 transition flex items-center space-x-1">
-                    <span>☕ Support</span>
-                </a>
+                <a href="#tools" class="hover:text-blue-400 transition">50+ Tools List</a>
+                <a href="donate.html" class="hover:text-blue-400 transition">☕ Support App</a>
                 <a href="privacy-policy.html" class="hover:text-blue-400 transition">Privacy Policy</a>
                 <a href="mailto:akhileshsworks@gmail.com" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">Contact</a>
             </nav>
 
             <!-- Hamburger Button (Mobile) -->
-            <button id="menuBtn" onclick="toggleMenu()" class="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 focus:outline-none" aria-label="Toggle menu">
-                <svg id="menuIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onclick="toggleMenu()" class="md:hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 focus:outline-none" aria-label="Toggle navigation">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
             </button>
@@ -51,73 +42,152 @@
         <!-- Mobile Dropdown Menu -->
         <div id="mobileMenu" class="hidden md:hidden px-4 pt-4 pb-6 space-y-3 border-t border-slate-800/80 mt-3 bg-[#070b14]">
             <a href="index.html" class="block px-3 py-2 rounded-xl text-base font-medium text-white bg-slate-900/80">🏠 Home</a>
-            <a href="#features" onclick="toggleMenu()" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">⚡ 50+ Offline Tools</a>
+            <a href="#tools" onclick="toggleMenu()" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">⚡ All 50+ Tools</a>
             <a href="donate.html" class="block px-3 py-2 rounded-xl text-base font-medium text-amber-400 hover:bg-slate-900">☕ Support Developer (UPI)</a>
             <a href="privacy-policy.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">🛡️ Privacy Policy</a>
             <a href="mailto:akhileshsworks@gmail.com" class="block px-3 py-2 rounded-xl text-base font-medium text-blue-400 hover:bg-slate-900">✉️ Contact Developer</a>
         </div>
     </header>
 
-    <!-- Main Hero Section -->
-    <main class="max-w-5xl mx-auto px-6 pt-12 pb-20 text-center flex-1">
-        
+    <!-- Main Hero -->
+    <main class="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center flex-1">
         <span class="px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 inline-block mb-6 shadow-sm">
-            Developed by Akhilesh Systems • 100% Offline & Zero Ads Interruption
+            Developed by Akhilesh Systems • 100% Offline & Private
         </span>
         
         <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white mb-6 leading-tight">
             Simplify Every Task with <br/>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-teal-400">One Smart Offline Toolkit</span>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-teal-400">50+ Smart Offline Tools</span>
         </h1>
         
         <p class="text-slate-400 max-w-2xl mx-auto text-base sm:text-lg mb-10 leading-relaxed">
-            Compress photos to exact KB/MB size, convert images to PDF, calculate GST & Loan EMIs, scan QR codes, and access 50+ lightweight utilities with complete device privacy.
+            From Photo Compression and Multi-Page PDF creation to GST Calculators, Hardware Compass, and Health Metrics — access 50+ lightweight utilities without internet or logins.
         </p>
 
-        <!-- CTA Buttons with Direct APK Download -->
-        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16 max-w-md mx-auto">
-            
-            <!-- Direct Download link (GitHub UI page open aagade direct APK file download shuru aaguththe) -->
-            <a href="https://github.com/akhileshsavali18-beep/Smarttoolkit/releases/latest/download/app-release.apk" download class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-3">
+        <!-- Direct APK Download CTA -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20 max-w-md mx-auto">
+            <a href="app-release.apk" download="APS_Tools.apk" class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-3">
                 <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
                     <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
                 </svg>
                 <span>Download APK (Direct)</span>
             </a>
 
-            <!-- Google Play Store button -->
             <div class="w-full sm:w-auto px-7 py-4 rounded-2xl border border-slate-800 bg-slate-900/60 text-slate-400 font-semibold flex items-center justify-center space-x-2 cursor-not-allowed">
-                <span>Google Play (Review in Progress)</span>
+                <span>Google Play (Coming Soon)</span>
             </div>
         </div>
 
-        <!-- 50+ Tools Feature Grid -->
-        <div id="features" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-left pt-6">
-            
-            <div class="p-6 rounded-3xl bg-slate-900/50 border border-slate-800/80 hover:border-slate-700 transition">
-                <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-400 flex items-center justify-center text-2xl mb-4 border border-blue-500/20">
-                    📸
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">Media & Documents</h3>
-                <p class="text-sm text-slate-400 leading-relaxed">Exact KB photo compression for government exams, image dimension resizer, offline multi-image PDF converter, and QR studio.</p>
+        <!-- Comprehensive 50 Tools Showcase Grid -->
+        <div id="tools" class="pt-8 text-left">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-extrabold text-white mb-3">All 50+ Tools at Your Fingertips</h2>
+                <p class="text-slate-400 text-sm">Categorized neatly for high performance, zero battery drain, and offline access.</p>
             </div>
 
-            <div class="p-6 rounded-3xl bg-slate-900/50 border border-slate-800/80 hover:border-slate-700 transition">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-400 flex items-center justify-center text-2xl mb-4 border border-emerald-500/20">
-                    💰
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Category 1 -->
+                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl font-bold">📸</span>
+                        <h3 class="text-lg font-bold text-white">Media & Documents (10)</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li>• <strong>Photo Compressor:</strong> Exact target KB/MB reduction</li>
+                        <li>• <strong>Image Resizer:</strong> Pixel & aspect ratio scaler</li>
+                        <li>• <strong>Image to PDF:</strong> Multi-page clean A4 document creator</li>
+                        <li>• <strong>QR Code Studio:</strong> Offline scanner & generator</li>
+                        <li>• <strong>Color Picker:</strong> Hex & RGB extractor</li>
+                        <li>• <strong>Text to Speech:</strong> Offline audio voice synthesizer</li>
+                        <li>• <strong>Word Counter:</strong> Word, character & reading timer</li>
+                        <li>• <strong>Case Converter:</strong> UPPER, lower, and Title case</li>
+                        <li>• <strong>Password Generator:</strong> High entropy passwords</li>
+                        <li>• <strong>Exif Metadata:</strong> Image hardware details viewer</li>
+                    </ul>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">Finance & Business</h3>
-                <p class="text-sm text-slate-400 leading-relaxed">Instant GST slab calculator (CGST/SGST), Home & Car Loan EMI planner, cash denomination note counter, and discount calculators.</p>
-            </div>
 
-            <div class="p-6 rounded-3xl bg-slate-900/50 border border-slate-800/80 hover:border-slate-700 transition">
-                <div class="w-12 h-12 rounded-2xl bg-indigo-600/10 text-indigo-400 flex items-center justify-center text-2xl mb-4 border border-indigo-500/20">
-                    ⚡
+                <!-- Category 2 -->
+                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-xl font-bold">💰</span>
+                        <h3 class="text-lg font-bold text-white">Finance & Business (10)</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li>• <strong>GST Calculator:</strong> 5%, 12%, 18%, 28% slabs + CGST/SGST</li>
+                        <li>• <strong>Loan / EMI Planner:</strong> Monthly interest & tenure amortizer</li>
+                        <li>• <strong>Cash Note Counter:</strong> 2000 to 10 live currency totalizer</li>
+                        <li>• <strong>SIP & Mutual Fund:</strong> Future wealth & return estimator</li>
+                        <li>• <strong>Discount & Sale:</strong> Instant percentage off calculator</li>
+                        <li>• <strong>Simple & Compound Interest:</strong> Formula comparisons</li>
+                        <li>• <strong>Profit & Loss:</strong> Margin percentage calculator</li>
+                        <li>• <strong>Bill Splitter:</strong> Group dining bill divider & tip tool</li>
+                        <li>• <strong>Fuel Cost Calculator:</strong> Mileage & trip fuel budget</li>
+                        <li>• <strong>Inflation Calculator:</strong> Future rupee purchasing power</li>
+                    </ul>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">Daily Utilities & Sensors</h3>
-                <p class="text-sm text-slate-400 leading-relaxed">Real-time hardware Compass, dual-axis Bubble level, decibel Sound meter, exact Age calculator, and unit converters.</p>
-            </div>
 
+                <!-- Category 3 -->
+                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-xl font-bold">⚡</span>
+                        <h3 class="text-lg font-bold text-white">Daily Utilities & Sensors (12)</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li>• <strong>Hardware Compass:</strong> Sensor azimuth direction finder</li>
+                        <li>• <strong>Bubble Level:</strong> Dual-axis horizontal surface leveler</li>
+                        <li>• <strong>Sound Decibel Meter:</strong> Ambient noise level analyzer</li>
+                        <li>• <strong>Exact Age Calculator:</strong> Years, months, days & countdown</li>
+                        <li>• <strong>Date Difference:</strong> Total days between two calendar dates</li>
+                        <li>• <strong>Day of Week Finder:</strong> Historical calendar day locator</li>
+                        <li>• <strong>Digital Tally Counter:</strong> Touch vibration count tracker</li>
+                        <li>• <strong>Stopwatch & Multi-Timer:</strong> Precision lap timer</li>
+                        <li>• <strong>Torch & Screen Light:</strong> Pure white & soft color lamps</li>
+                        <li>• <strong>World Clock:</strong> Multi-country timezone comparator</li>
+                        <li>• <strong>Coin Flipper & Dice:</strong> Randomized quick decision maker</li>
+                        <li>• <strong>Random Picker:</strong> List decision selector</li>
+                    </ul>
+                </div>
+
+                <!-- Category 4 -->
+                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-xl font-bold">❤️</span>
+                        <h3 class="text-lg font-bold text-white">Health & Fitness (8)</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li>• <strong>BMI Calculator:</strong> Height/weight classification status</li>
+                        <li>• <strong>Calorie & BMR Estimator:</strong> Daily energy baseline requirements</li>
+                        <li>• <strong>Daily Water Tracker:</strong> Body mass hydration requirement</li>
+                        <li>• <strong>Ideal Body Weight:</strong> Devine and Robinson index formulas</li>
+                        <li>• <strong>Body Fat Percentage:</strong> Tape measurement index estimator</li>
+                        <li>• <strong>Breathing Relaxer:</strong> Guided 4-7-8 rhythm animation</li>
+                        <li>• <strong>Sleep Cycle Planner:</strong> 90-minute REM wake cycle optimizer</li>
+                        <li>• <strong>Target Heart Rate:</strong> Aerobic & fat burn zone calculator</li>
+                    </ul>
+                </div>
+
+                <!-- Category 5 -->
+                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-xl font-bold">🔬</span>
+                        <h3 class="text-lg font-bold text-white">Science & Converters (10)</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li>• <strong>Unit Converter:</strong> Length, Weight, and Temperature units</li>
+                        <li>• <strong>Area & Land Converter:</strong> Sq Ft, Guntha, Acre, and Hectare</li>
+                        <li>• <strong>Storage Size Converter:</strong> KB, MB, GB, and Terabytes</li>
+                        <li>• <strong>Speed & Pace Converter:</strong> km/h, mph, and min/km metrics</li>
+                        <li>• <strong>Percentage Math Tools:</strong> Value change and ratio calculations</li>
+                        <li>• <strong>CGPA to Percentage:</strong> University conversion standards</li>
+                        <li>• <strong>Roman Numerals:</strong> Standard to Roman numbers</li>
+                        <li>• <strong>Number Base Converter:</strong> Binary, Octal, Decimal, and Hex</li>
+                        <li>• <strong>Morse Code Translator:</strong> Text to audio-visual telegraph dots</li>
+                        <li>• <strong>Prime Number Checker:</strong> Factorization and integer checks</li>
+                    </ul>
+                </div>
+
+            </div>
         </div>
     </main>
 
@@ -126,19 +196,18 @@
         <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <p>© 2026 Akhilesh Systems. All rights reserved.</p>
             <div class="space-x-6">
-                <a href="donate.html" class="hover:text-slate-300 transition">Support Developer</a>
+                <a href="donate.html" class="hover:text-slate-300 transition">Support Development</a>
                 <a href="privacy-policy.html" class="hover:text-slate-300 transition">Privacy Policy</a>
                 <a href="mailto:akhileshsworks@gmail.com" class="hover:text-slate-300 transition">akhileshsworks@gmail.com</a>
             </div>
         </div>
     </footer>
 
-    <!-- Mobile Menu Toggle JavaScript -->
     <script>
         function toggleMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('hidden');
+            document.getElementById('mobileMenu').classList.toggle('hidden');
         }
     </script>
 </body>
 </html>
+                            
