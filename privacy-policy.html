@@ -4,32 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - APS TOOLS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: auto; color: #333; }
-        h1 { color: #1a73e8; }
-        h2 { color: #202124; margin-top: 20px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body>
-    <h1>Privacy Policy for APS TOOLS</h1>
-    <p>Last updated: September 2026</p>
-    <p><strong>Akhilesh Systems</strong> built the APS TOOLS app as an Ad-supported utility application. This SERVICE is provided by Akhilesh Systems at no cost and is intended for use as is.</p>
+<body class="bg-[#070b14] text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
 
-    <h2>Information Collection and Use</h2>
-    <p>APS TOOLS processes photos, documents, and calculations locally on your device. We do not upload, store, or share your personal files, compressed images, or converted PDFs on any remote servers.</p>
+    <!-- Header Navigation with App Logo -->
+    <header class="border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-50 bg-[#070b14]/90 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="flex items-center space-x-3 group">
+                <img src="ic_launcher.png" alt="APS TOOLS" class="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform" onerror="this.src='https://via.placeholder.com/40/2563eb/ffffff?text=APS'" />
+                <span class="text-xl font-extrabold tracking-tight text-white block leading-none">APS TOOLS</span>
+            </a>
 
-    <h2>Third-Party Services & Advertising</h2>
-    <p>The app uses third-party services that may collect information used to identify you:</p>
-    <ul>
-        <li><strong>Google AdMob:</strong> Used for displaying advertisements to keep the app free.</li>
-        <li><strong>Google Firebase Analytics:</strong> Used strictly to monitor app performance, crash reports, and improve feature stability.</li>
-        <li><strong>Google Play In-App Billing:</strong> Handles secure subscription or ad-free purchases directly through Google Play.</li>
-    </ul>
+            <nav class="hidden md:flex items-center space-x-6 text-sm font-semibold text-slate-300">
+                <a href="index.html" class="hover:text-blue-400 transition">Home</a>
+                <a href="donate.html" class="hover:text-blue-400 transition">☕ Support</a>
+                <a href="privacy-policy.html" class="text-blue-400 font-bold transition">Privacy Policy</a>
+                <a href="mailto:akhileshsworks@gmail.com" class="hover:text-blue-400 transition">Contact</a>
+            </nav>
 
-    <h2>Device Permissions</h2>
-    <p>The app requests access to Storage/Media solely to allow you to select images for compression/conversion and to save the processed files directly to your gallery/device storage.</p>
+            <button onclick="toggleMenu()" class="md:hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 focus:outline-none" aria-label="Toggle navigation">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
 
-    <h2>Contact Us</h2>
-    <p>If you have any questions or suggestions about this Privacy Policy, contact us at: <strong>akhileshsworks@gmail.com</strong></p>
+        <div id="mobileMenu" class="hidden md:hidden px-4 pt-4 pb-6 space-y-3 border-t border-slate-800/80 mt-3 bg-[#070b14]">
+            <a href="index.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">🏠 Home</a>
+            <a href="donate.html" class="block px-3 py-2 rounded-xl text-base font-medium text-amber-400 hover:bg-slate-900">☕ Support Developer</a>
+            <a href="privacy-policy.html" class="block px-3 py-2 rounded-xl text-base font-medium text-white bg-slate-900/80">🛡️ Privacy Policy</a>
+            <a href="mailto:akhileshsworks@gmail.com" class="block px-3 py-2 rounded-xl text-base font-medium text-blue-400 hover:bg-slate-900">✉️ Contact</a>
+        </div>
+    </header>
+
+    <!-- Privacy Content -->
+    <main class="max-w-4xl mx-auto px-6 py-12 flex-1">
+        <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl">
+            <span class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 inline-block mb-4">
+                Google Play Compliant
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-2">Privacy Policy for APS TOOLS</h1>
+            <p class="text-xs text-slate-500 mb-8">Effective Date: September 2026 • Maintained by Akhilesh Systems</p>
+
+            <div class="space-y-6 text-sm text-slate-300 leading-relaxed">
+                <section>
+                    <h2 class="text-lg font-bold text-white mb-2">1. Offline First & Zero Remote Storage</h2>
+                    <p>APS TOOLS is built as an offline-first application. All processing (including photo compression, PDF document generation, and mathematical calculations) occurs directly on your physical Android device. We never transfer, store, or view your photos, documents, or data on external cloud servers.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold text-white mb-2">2. Device Permissions</h2>
+                    <p>The app requests limited Android device permissions solely to deliver features you invoke:</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1 text-slate-400">
+                        <li><strong>Storage / Media:</strong> Required solely to pick images from your gallery for compression/PDF creation and save output results to your local device.</li>
+                        <li><strong>Sensors (Accelerometer / Magnetometer):</strong> Used locally in real time for the Compass and Bubble Level tools. No sensor data is ever recorded.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold text-white mb-2">3. Advertising & Analytics</h2>
+                    <p>The application integrates standard Google AdMob SDKs to display rewarded and contextual advertisements, keeping the 50+ tools free. Google may collect anonymized advertising identifiers in accordance with the standard Google Play Services privacy framework.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold text-white mb-2">4. Contacting Developer</h2>
+                    <p>For privacy queries, security audits, or support requests, write directly to:</p>
+                    <p class="mt-2 text-blue-400 font-semibold font-mono">akhileshsworks@gmail.com</p>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900/80 py-8 text-center text-xs text-slate-500 bg-[#060910]">
+        <p>© 2026 Akhilesh Systems. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        }
+    </script>
 </body>
 </html>
