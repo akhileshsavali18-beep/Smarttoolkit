@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support APS TOOLS - Akhilesh Systems</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 backdrop-blur sticky top-0 z-50 bg-slate-950/80 px-6 py-4 flex justify-between items-center max-w-4xl mx-auto w-full">
+        <a href="index.html" class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-extrabold text-white shadow-lg shadow-blue-500/30">APS</div>
+            <span class="text-lg font-bold tracking-tight">APS TOOLS</span>
+        </a>
+        <a href="index.html" class="text-sm text-slate-400 hover:text-white transition">← Back to Home</a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-xl mx-auto px-6 py-12 text-center w-full">
+        <span class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-block mb-4">
+            Support Akhilesh Systems
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-3">Support APS TOOLS</h1>
+        <p class="text-slate-400 text-sm sm:text-base mb-8">
+            APS TOOLS is 100% free and offline. If our tools helped save your time, you can support further development with a small tip!
+        </p>
+
+        <!-- Donation Card -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-blue-950/40">
+            
+            <!-- Amount Preset Chips -->
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-left">Choose Tip Amount</label>
+            <div class="grid grid-cols-4 gap-2 mb-4">
+                <button onclick="setAmount(20)" class="amount-btn py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-blue-500 hover:text-blue-400 transition">₹20</button>
+                <button onclick="setAmount(50)" class="amount-btn py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-blue-500 hover:text-blue-400 transition">₹50</button>
+                <button onclick="setAmount(100)" class="amount-btn py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-blue-500 hover:text-blue-400 transition">₹100</button>
+                <button onclick="setAmount(200)" class="amount-btn py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-blue-500 hover:text-blue-400 transition">₹200</button>
+            </div>
+
+            <!-- Custom Amount Input -->
+            <div class="mb-6 text-left">
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Or Enter Custom Amount (₹)</label>
+                <input id="customAmount" type="number" value="50" oninput="updatePayLink()" placeholder="e.g. 50" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold focus:outline-none focus:border-blue-500 transition" />
+            </div>
+
+            <!-- Direct Pay Button (Mobile UPI Intent) -->
+            <a id="payBtn" href="upi://pay?pa=akhilesh.savali@ptaxis&pn=Akhilesh%20Systems&cu=INR&am=50&tn=Support%20APS%20Tools" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 text-base mb-6">
+                <span>Pay via UPI (GPay / PhonePe / Paytm)</span>
+                <span>⚡</span>
+            </a>
+
+            <!-- Divider -->
+            <div class="relative flex py-2 items-center mb-6">
+                <div class="flex-grow border-t border-slate-800"></div>
+                <span class="flex-shrink mx-4 text-xs font-semibold text-slate-500 uppercase">Or Scan UPI QR Code</span>
+                <div class="flex-grow border-t border-slate-800"></div>
+            </div>
+
+            <!-- Dynamic QR Code Container -->
+            <div class="flex flex-col items-center justify-center p-4 bg-white rounded-2xl w-52 h-52 mx-auto mb-4 shadow-lg">
+                <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3Dakhilesh.savali%40ptaxis%26pn%3DAkhilesh%2520Systems%26cu%3DINR%26am%3D50%26tn%3DSupport%2520APS%2520Tools" alt="UPI QR Code" class="w-44 h-44 object-contain" />
+            </div>
+
+            <!-- Manual UPI ID Copy -->
+            <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center justify-between">
+                <div class="text-left">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">UPI ID</span>
+                    <span id="upiText" class="text-xs font-mono font-semibold text-slate-200">akhilesh.savali@ptaxis</span>
+                </div>
+                <button onclick="copyUPI()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg transition text-slate-300">
+                    <span id="copyLabel">Copy</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Akhilesh Systems. All direct contributions fund app maintenance & updates.</p>
+        <div class="mt-2 space-x-4">
+            <a href="privacy-policy.html" class="underline hover:text-slate-400">Privacy Policy</a>
+            <a href="mailto:akhileshsworks@gmail.com" class="underline hover:text-slate-400">akhileshsworks@gmail.com</a>
+        </div>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        const upiId = "akhilesh.savali@ptaxis";
+        const payeeName = "Akhilesh Systems";
+
+        function setAmount(val) {
+            document.getElementById('customAmount').value = val;
+            updatePayLink();
+        }
+
+        function updatePayLink() {
+            let amount = document.getElementById('customAmount').value;
+            let note = "Support APS Tools";
+            
+            let upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&cu=INR&tn=${encodeURIComponent(note)}`;
+            if (amount && amount > 0) {
+                upiUri += `&am=${encodeURIComponent(amount)}`;
+            }
+
+            document.getElementById('payBtn').href = upiUri;
+            let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUri)}`;
+            document.getElementById('qrImage').src = qrUrl;
+        }
+
+        function copyUPI() {
+            navigator.clipboard.writeText(upiId);
+            const label = document.getElementById('copyLabel');
+            label.innerText = 'Copied!';
+            label.classList.add('text-emerald-400');
+            setTimeout(() => {
+                label.innerText = 'Copy';
+                label.classList.remove('text-emerald-400');
+            }, 2000);
+        }
+    </script>
+</body>
+  </html>
+
