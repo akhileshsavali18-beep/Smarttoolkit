@@ -68,7 +68,7 @@ jobs:
           fi
           chmod +x gradlew
 
-          # 7. Create Permanent Production Release Keystore
+          # 7. Create Permanent Production Release Keystore (Akhilesh Systems)
           keytool -genkey -v \
             -keystore my-upload-key.jks \
             -alias upload \
@@ -77,7 +77,7 @@ jobs:
             -validity 10000 \
             -storepass "apslabs123" \
             -keypass "apslabs123" \
-            -dname "CN=APS Labs, OU=Mobile Development, O=APS Labs, L=Ainapur, ST=Karnataka, C=IN"
+            -dname "CN=Akhilesh Systems, OU=Mobile Development, O=Akhilesh Systems, L=Ainapur, ST=Karnataka, C=IN"
 
           cp my-upload-key.jks app/my-upload-key.jks
 
@@ -89,13 +89,21 @@ jobs:
         run: |
           ./gradlew bundleRelease --no-daemon
 
-      - name: Build Signed Release APK (For Testing)
+      - name: Build Signed Release APK & Rename to app-release.apk
         env:
           KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
           STORE_PASSWORD: "apslabs123"
           KEY_PASSWORD: "apslabs123"
         run: |
           ./gradlew assembleRelease --no-daemon || ./gradlew assembleDebug --no-daemon
+          
+          # Output folder create maadi APK annu strictly app-release.apk anta rename maaduvudu
+          mkdir -p release-output
+          APK_FILE=$(find app/build/outputs/apk/ -name "*.apk" | head -n 1)
+          if [ -n "$APK_FILE" ]; then
+            echo "Found APK at $APK_FILE, renaming to app-release.apk..."
+            cp -f "$APK_FILE" release-output/app-release.apk
+          fi
 
       - name: Upload Play Store Bundle (.aab) & Keystore
         uses: actions/upload-artifact@v4
@@ -105,9 +113,9 @@ jobs:
             **/build/outputs/bundle/release/*.aab
             my-upload-key.jks
 
-      - name: Upload Test APK
+      - name: Upload app-release.apk
         uses: actions/upload-artifact@v4
         with:
-          name: APSTools-Release-APK
-          path: '**/build/outputs/apk/**/*.apk'
+          name: app-release-apk
+          path: release-output/app-release.apk
           
