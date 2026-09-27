@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -101,6 +102,9 @@ fun ApsToolsApp(modifier: Modifier = Modifier) {
     }
 
     var currentScreen by remember { mutableStateOf(AppScreen.SPLASH) }
+    // Keep each screen's Compose state (including Dashboard tab/scroll position)
+    // alive while navigating to another screen, so Back returns to the exact place.
+    val saveableStateHolder = rememberSaveableStateHolder()
 
     LaunchedEffect(currentScreen) {
         if (currentScreen != AppScreen.SPLASH && currentScreen != AppScreen.DASHBOARD) {
@@ -132,7 +136,8 @@ fun ApsToolsApp(modifier: Modifier = Modifier) {
             },
             label = "screen_navigation"
         ) { screen ->
-            when (screen) {
+            saveableStateHolder.SaveableStateProvider(screen.name) {
+                when (screen) {
                 AppScreen.SPLASH -> SplashScreen(
                     onSplashFinished = { currentScreen = AppScreen.DASHBOARD }
                 )
@@ -323,6 +328,7 @@ fun ApsToolsApp(modifier: Modifier = Modifier) {
                 AppScreen.WHITEBOARD_SIGNATURE_PAD -> WhiteboardScreen(
                     onBack = { currentScreen = AppScreen.DASHBOARD }
                 )
+            }
             }
         }
     }
