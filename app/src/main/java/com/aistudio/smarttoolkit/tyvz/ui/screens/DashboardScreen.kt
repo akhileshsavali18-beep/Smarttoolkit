@@ -1486,14 +1486,10 @@ private fun CategoriesTabContent(
     onNavigateToTool: (AppScreen) -> Unit
 ) {
     val context = LocalContext.current
+    // Show every real category (11) in the Categories tab.
+    // ALL is rendered separately as the first "All Categories" chip.
     val categories = remember {
-        listOf(
-            ToolCategory.MEDIA_DOC,
-            ToolCategory.FINANCE,
-            ToolCategory.DAILY_HEALTH,
-            ToolCategory.HEALTH_FITNESS,
-            ToolCategory.SCIENCE_CONVERTERS
-        )
+        ToolCategory.values().filter { it != ToolCategory.ALL }
     }
     var selectedCategoryFilter by remember { mutableStateOf(ToolCategory.ALL) }
 
