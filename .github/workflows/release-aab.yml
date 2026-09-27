@@ -88,12 +88,14 @@ jobs:
           VERSION_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
           TAG="v${VERSION_NAME}"
           APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -1)
+          RELEASE_APK="${RUNNER_TEMP}/APSTool.apk"
+          cp -f "$APK" "$RELEASE_APK"
           test -n "$VERSION_NAME"
-          test -n "$APK"
+          test -s "$RELEASE_APK"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists; replacing its APK with this build."
-            gh release upload "$TAG" "$APK" --clobber
+            gh release upload "$TAG" "$RELEASE_APK" --clobber
           else
-            gh release create "$TAG" "$APK" --title "APS TOOLS $VERSION_NAME" --generate-notes
+            gh release create "$TAG" "$RELEASE_APK" --title "APS TOOLS $VERSION_NAME" --generate-notes
           fi
           echo "Published APK for $TAG"
