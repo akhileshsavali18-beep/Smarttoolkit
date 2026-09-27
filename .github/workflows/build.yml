@@ -68,7 +68,7 @@ jobs:
           fi
           chmod +x gradlew
 
-          # 7. Create Permanent Production Release Keystore (Akhilesh Systems)
+          # 7. Create Permanent Production Release Keystore (A28 TECHNOLOGIES)
           keytool -genkey -v \
             -keystore my-upload-key.jks \
             -alias upload \
@@ -77,7 +77,7 @@ jobs:
             -validity 10000 \
             -storepass "apslabs123" \
             -keypass "apslabs123" \
-            -dname "CN=Akhilesh Systems, OU=Mobile Development, O=Akhilesh Systems, L=Ainapur, ST=Karnataka, C=IN"
+            -dname "CN=A28 TECHNOLOGIES, OU=Mobile Development, O=A28 TECHNOLOGIES, L=Ainapur, ST=Karnataka, C=IN"
 
           cp my-upload-key.jks app/my-upload-key.jks
 
