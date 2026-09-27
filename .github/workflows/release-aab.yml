@@ -33,15 +33,14 @@ jobs:
           test -f app/build.gradle || test -f app/build.gradle.kts
           echo "Building directly from repository source (no ZIP extraction)."
 
-      - name: Apply APS TOOLS official logo everywhere
+      - name: Apply APS TOOLS ic_launcher logo everywhere
         run: |
-          # The repository root app_banner.png is the APS TOOLS logo asset.
-          # Use it for launcher, splash and in-app branding via the shared app_banner resource.
-          test -f app_banner.png
+          # Use the repository root ic_launcher.png as the single APS TOOLS logo asset.
+          test -f ic_launcher.png
           mkdir -p app/src/main/res/drawable
-          rm -f app/src/main/res/drawable/app_banner.xml
-          cp -f app_banner.png app/src/main/res/drawable/app_banner.png
-          echo "Applied repository app_banner.png as the APS TOOLS logo."
+          rm -f app/src/main/res/drawable/ic_launcher.xml
+          cp -f ic_launcher.png app/src/main/res/drawable/ic_launcher.png
+          echo "Applied repository ic_launcher.png as the APS TOOLS logo."
 
       - name: Restore release keystore
         env:
