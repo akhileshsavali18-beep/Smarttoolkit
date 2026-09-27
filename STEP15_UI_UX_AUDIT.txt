@@ -1,0 +1,5 @@
+APS TOOLS — STEP 15 UI/UX CLEANUP
+
+Applied conservative, subscription-correct wording cleanup in DashboardScreen.kt and ProUpgradeDialog.kt. Existing layout, navigation, tool logic, ad logic and theme system were intentionally preserved to avoid regressions.
+
+Removed subscription-inaccurate 'Lifetime' wording where found in these UI files.

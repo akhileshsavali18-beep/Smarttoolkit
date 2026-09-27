@@ -1,0 +1,9 @@
+APS TOOLS — STEP 14 STATIC AUDIT
+
+[PASS] No old lifetime wording
+[PASS] No fake/test premium toggle
+[PASS] No Google test ad unit IDs
+[PASS] Subscription product present
+[PASS] SUBS billing present
+[PASS] Monthly base plan referenced
+[PASS] Yearly base plan referenced

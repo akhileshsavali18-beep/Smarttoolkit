@@ -1,0 +1,23 @@
+APS TOOLS — STEP 5 ADMOB FINAL VERIFICATION
+==================================================
+
+Result: PASS
+Files scanned: 95
+
+1. Google test ad IDs / test markers:
+   NONE FOUND
+
+2. AdConfig production App ID(s):
+   ca-app-pub-3063864969990896~7861759208
+3. Manifest App ID(s):
+   ca-app-pub-3063864969990896~7861759208
+4. Production ad unit IDs found:
+   ca-app-pub-3063864969990896/9487858185
+   ca-app-pub-3063864969990896/9431570758
+   ca-app-pub-3063864969990896/4179244074
+   ca-app-pub-3063864969990896/8526435640
+
+5. Google Mobile Ads SDK references:
+   gradle/libs.versions.toml
+
+NOTE: Code audit cannot prove that AdMob is serving live ads. Final live-serving verification must be done in a debug/internal-test build using the AdMob console and policy-safe testing procedure.

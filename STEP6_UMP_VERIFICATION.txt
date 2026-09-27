@@ -1,0 +1,21 @@
+APS TOOLS — STEP 6 UMP PRIVACY & CONSENT VERIFICATION
+==========================================================
+
+PASS — UMP dependency
+PASS — Consent request on launch
+PASS — Ads gated by canRequestAds
+PASS — Banner observes consent state
+PASS — Privacy options UI
+PASS — Test AdMob ID absent
+PASS — Test premium absent
+PASS — Second early AdManager init absent
+
+Notes:
+- UMP SDK version configured: 4.0.0
+- Consent info is refreshed at every MainActivity launch.
+- Required consent form is loaded through loadAndShowConsentFormIfRequired().
+- AdMob initialization/ad loading is gated by canRequestAds().
+- Privacy Choices entry is shown when UMP reports that a privacy options entry point is required.
+- No Google test ad IDs remain in the project.
+- AdMob/UMP console message configuration still has to be completed in the AdMob account before release.
+- A local Gradle build could not be run because this project ZIP does not contain a Gradle wrapper; this is a static code audit.

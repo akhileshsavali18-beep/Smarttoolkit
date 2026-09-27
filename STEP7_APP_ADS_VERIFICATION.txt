@@ -1,0 +1,15 @@
+APS TOOLS — STEP 7 app-ads.txt
+================================
+
+Status: PASS — file prepared
+
+Publisher ID: pub-3063864969990896
+AdMob App ID in project: ca-app-pub-3063864969990896~7861759208
+
+The project contains a GitHub Pages URL reference:
+https://akhileshsavali18-beep.github.io/Smarttoolkit/
+
+IMPORTANT HOSTING NOTE:
+For AdMob to crawl app-ads.txt, the developer website entered in Google Play must resolve to a hostname where /app-ads.txt is actually reachable. If using the root GitHub Pages domain, publish app-ads.txt at that site's root. If using a custom domain, publish the same file at the custom domain root.
+
+Google says the crawler checks https://<hostname>/app-ads.txt and may take up to 24 hours to verify. After publishing, use AdMob's app-ads.txt/Verify app page to request a crawl/check for updates.

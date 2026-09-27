@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "305662447717",
+    "project_id": "aps-tools",
+    "storage_bucket": "aps-tools.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305662447717:android:470387c036ca4576b9368c",
+        "android_client_info": {
+          "package_name": "com.aistudio.smarttoolkit.tyvz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhu35r2I63ofPgwLO4RshlYoH8g9v_qmA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

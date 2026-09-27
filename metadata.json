@@ -1,0 +1,6 @@
+{
+  "name": "APS TOOLS",
+  "description": "Simple Tools • Smart Results. Production-ready multi-utility suite featuring Image & Doc tools, Financial calculators, and Daily utilities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

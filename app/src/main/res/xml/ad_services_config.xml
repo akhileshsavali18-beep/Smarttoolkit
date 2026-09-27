@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ad-services-config>
+    <!-- Disable Privacy Sandbox Attribution, Topics, and Protected Audience to prevent attempts to bind to missing system services in cloud emulators -->
+    <attribution allowAdIdMatching="false" />
+    <topics allowAdIdMatching="false" />
+    <protected-audience allowAdIdMatching="false" />
+</ad-services-config>

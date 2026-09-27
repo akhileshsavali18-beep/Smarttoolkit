@@ -1,0 +1,14 @@
+APS TOOLS — STEP 16 PRIVACY & PERMISSIONS AUDIT
+
+Manifest permissions reviewed:
+- INTERNET: required for AdMob/Firebase/network content.
+- ACCESS_NETWORK_STATE: network availability checks.
+- com.android.vending.BILLING: Google Play subscriptions.
+- CAMERA: used by QR scanner feature.
+- RECORD_AUDIO: used by Sound Meter feature.
+- VIBRATE: retained for app feedback/QR-related interaction.
+
+No location, contacts, SMS, phone, calendar, external storage, or broad file-management permissions are declared in the manifest.
+
+Result: no unnecessary manifest permission identified; no permission removed.
+Runtime permission usage was found for camera/audio features and is feature-specific.
