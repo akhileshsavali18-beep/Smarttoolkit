@@ -2,8 +2,7 @@ name: Migrate APS TOOLS ZIP to Source
 
 on:
   push:
-    paths:
-      - APStool.zip
+    branches: [main]
   workflow_dispatch:
 
 permissions:
