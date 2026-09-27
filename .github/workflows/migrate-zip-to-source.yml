@@ -1,0 +1,59 @@
+name: Migrate APS TOOLS ZIP to Source
+
+on:
+  push:
+    paths:
+      - APStool.zip
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Android project
+        run: |
+          test -f APStool.zip
+          rm -rf /tmp/aps-project
+          mkdir -p /tmp/aps-project
+          unzip -q APStool.zip -d /tmp/aps-project
+
+          PROJECT_ROOT=$(find /tmp/aps-project -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) -print -quit | xargs -r dirname)
+
+          if [ -z "$PROJECT_ROOT" ]; then
+            echo "ERROR: Android Gradle project root not found"
+            find /tmp/aps-project -maxdepth 4 -type f | sort | head -200
+            exit 1
+          fi
+
+          echo "Project root: $PROJECT_ROOT"
+          cp -a "$PROJECT_ROOT"/. .
+
+          test -f settings.gradle || test -f settings.gradle.kts
+          test -d app
+
+      - name: Remove ZIP after successful extraction
+        run: rm -f APStool.zip
+
+      - name: Commit source project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git status --short
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Migrate APS TOOLS source from APStool.zip"
+          git push origin HEAD:main
