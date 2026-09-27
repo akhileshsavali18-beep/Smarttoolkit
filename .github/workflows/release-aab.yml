@@ -27,24 +27,11 @@ jobs:
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
           yes | sdkmanager --licenses
 
-      - name: Extract Android project
+      - name: Verify Android project source
         run: |
-          rm -rf /tmp/aps-project
-          mkdir -p /tmp/aps-project
-          unzip -q APStool.zip -d /tmp/aps-project
-
-          PROJECT_ROOT=$(find /tmp/aps-project -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) -print -quit | xargs -r dirname)
-
-          if [ -z "$PROJECT_ROOT" ] || { [ ! -f "$PROJECT_ROOT/app/build.gradle" ] && [ ! -f "$PROJECT_ROOT/app/build.gradle.kts" ]; }; then
-            echo "ERROR: Android Gradle project root was not found inside APStool.zip"
-            find /tmp/aps-project -maxdepth 4 -type f | sort | head -200
-            exit 1
-          fi
-
-          echo "Android project root: $PROJECT_ROOT"
-          cp -a "$PROJECT_ROOT"/. .
-          ls -la
           test -f settings.gradle || test -f settings.gradle.kts
+          test -f app/build.gradle || test -f app/build.gradle.kts
+          echo "Building directly from repository source (no ZIP extraction)."
 
       - name: Restore release keystore
         env:
