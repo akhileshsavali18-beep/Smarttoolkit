@@ -19,7 +19,10 @@ jobs:
 
       - name: Extract Android project
         run: |
-          test -f APStool.zip
+          if [ ! -f APStool.zip ]; then
+            echo "APStool.zip not present; source is already migrated. Nothing to do."
+            exit 0
+          fi
           rm -rf /tmp/aps-project
           mkdir -p /tmp/aps-project
           unzip -q APStool.zip -d /tmp/aps-project
