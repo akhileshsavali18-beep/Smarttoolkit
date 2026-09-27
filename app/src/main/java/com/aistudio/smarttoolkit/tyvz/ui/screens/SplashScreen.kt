@@ -79,7 +79,7 @@ fun SplashScreen(
                 .alpha(alphaAnim.value)
                 .scale(scaleAnim.value)
         ) {
-            // Center the app icon using R.drawable.app_banner with smooth fade-in
+            // Center the app icon using R.drawable.ic_launcher with smooth fade-in
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -88,7 +88,7 @@ fun SplashScreen(
                     .background(Color(0xFF1E3A8A))
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.app_banner),
+                    painter = painterResource(id = R.drawable.ic_launcher),
                     contentDescription = "APS Tools Icon",
                     modifier = Modifier
                         .size(80.dp)
