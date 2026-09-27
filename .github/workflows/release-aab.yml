@@ -77,3 +77,20 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish GitHub Release with latest APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
+          TAG="v${VERSION_NAME}"
+          APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -1)
+          test -n "$VERSION_NAME"
+          test -n "$APK"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; replacing its APK with this build."
+            gh release upload "$TAG" "$APK" --clobber
+          else
+            gh release create "$TAG" "$APK" --title "APS TOOLS $VERSION_NAME" --generate-notes
+          fi
+          echo "Published APK for $TAG"
