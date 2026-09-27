@@ -1022,7 +1022,7 @@ fun DashboardScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
-                            painter = painterResource(id = R.drawable.app_banner),
+                            painter = painterResource(id = R.drawable.ic_launcher),
                             contentDescription = "APS Tools Banner Logo",
                             modifier = Modifier
                                 .height(38.dp)
@@ -1750,7 +1750,7 @@ private fun ProfileTabContent(
                         .padding(20.dp)
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.app_banner),
+                        painter = painterResource(id = R.drawable.ic_launcher),
                         contentDescription = "App Icon",
                         modifier = Modifier
                             .size(72.dp)
