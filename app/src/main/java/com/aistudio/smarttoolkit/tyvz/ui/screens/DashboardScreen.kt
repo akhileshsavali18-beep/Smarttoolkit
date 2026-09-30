@@ -2619,7 +2619,7 @@ private fun UpdateAvailableDialog(
 
                 if (isDownloading) {
                     LinearProgressIndicator(
-                        progress = { downloadProgress / 100f },
+                        progress = downloadProgress / 100f,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
