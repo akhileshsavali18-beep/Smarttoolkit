@@ -62,10 +62,10 @@
             
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-left">Choose Contribution Amount</label>
             <div class="grid grid-cols-4 gap-2 mb-4">
-                <button onclick="setAmount(20)" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-amber-500 hover:text-amber-400 transition">₹20</button>
+                <button onclick="setAmount(10)" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-amber-500 hover:text-amber-400 transition">₹10</button>
                 <button onclick="setAmount(50)" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-amber-500 hover:text-amber-400 transition">₹50</button>
                 <button onclick="setAmount(100)" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-amber-500 hover:text-amber-400 transition">₹100</button>
-                <button onclick="setAmount(200)" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-amber-500 hover:text-amber-400 transition">₹200</button>
+                <button onclick="focusCustomAmount()" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 font-bold hover:border-amber-500 hover:text-amber-400 transition">Custom</button>
             </div>
 
             <!-- Custom Amount -->
@@ -75,7 +75,7 @@
             </div>
 
             <!-- Mobile UPI Button -->
-            <a id="payBtn" href="upi://pay?pa=akhilesh.savali@ptaxis&pn=Akhilesh%20Systems&cu=INR&am=50&tn=Support%20APS%20Tools" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 text-base mb-6">
+            <a id="payBtn" href="upi://pay?pa=akhilesh.savali@ptaxis&pn=A28%20TECHNOLOGIES&cu=INR&am=50&tn=Support%20APS%20Tools" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-amber-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 text-base mb-6">
                 <span>Send via UPI (GPay / PhonePe / Paytm)</span>
                 <span>⚡</span>
             </a>
@@ -88,7 +88,7 @@
 
             <!-- UPI QR Code -->
             <div class="flex flex-col items-center justify-center p-4 bg-white rounded-2xl w-52 h-52 mx-auto mb-4 shadow-lg">
-                <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3Dakhilesh.savali%40ptaxis%26pn%3DAkhilesh%2520Systems%26cu%3DINR%26am%3D50%26tn%3DSupport%2520APS%2520Tools" alt="UPI QR Code" class="w-44 h-44 object-contain" />
+                <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi%3A%2F%2Fpay%3Fpa%3Dakhilesh.savali%40ptaxis%26pn%3DA28%2520TECHNOLOGIES%26cu%3DINR%26am%3D50%26tn%3DSupport%2520APS%2520Tools" alt="UPI QR Code" class="w-44 h-44 object-contain" />
             </div>
 
             <!-- UPI ID Field -->
@@ -113,7 +113,7 @@
         const upiId = "akhilesh.savali@ptaxis";
         const payeeName = "A28 TECHNOLOGIES";
 
-        function setAmount(val) {
+        function focusCustomAmount() {\n            const input = document.getElementById("customAmount");\n            input.focus();\n            input.select();\n        }\n\n        function setAmount(val) {
             document.getElementById('customAmount').value = val;
             updatePayLink();
         }
