@@ -267,6 +267,7 @@ import com.aistudio.smarttoolkit.tyvz.ui.theme.WorldClockPurple
 import com.aistudio.smarttoolkit.tyvz.ui.theme.WorldClockPurpleBg
 import com.aistudio.smarttoolkit.tyvz.utils.HapticUtils
 import java.util.Calendar
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 data class ToolDefinition(
@@ -318,10 +319,12 @@ fun DashboardScreen(
     var showFeedbackDialog by remember { mutableStateOf(false) }
     var feedbackSubmitting by remember { mutableStateOf(false) }
     var feedbackSubmitted by remember { mutableStateOf(false) }
+    var feedbackAttempt by remember { mutableStateOf(0) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showCoffeeDialog by remember { mutableStateOf(false) }
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     var isDownloadingUpdate by remember { mutableStateOf(false) }
+    var updateProgress by remember { mutableStateOf(0) }
     val updateScope = rememberCoroutineScope()
 
     fun checkForUpdate(showNoUpdateMessage: Boolean = false) {
@@ -937,29 +940,54 @@ fun DashboardScreen(
                     Toast.makeText(context, "Please enter your feedback.", Toast.LENGTH_SHORT).show()
                 } else {
                     feedbackSubmitting = true
+                    feedbackSubmitted = false
+                    feedbackAttempt += 1
+                    val currentAttempt = feedbackAttempt
+
                     val feedback = hashMapOf<String, Any>(
                         "rating" to rating,
                         "comment" to cleanComment,
                         "appVersion" to BuildConfig.VERSION_NAME,
                         "createdAt" to FieldValue.serverTimestamp()
                     )
+
                     FirebaseFirestore.getInstance()
                         .collection("feedback")
                         .add(feedback)
                         .addOnSuccessListener {
-                            feedbackSubmitting = false
-                            feedbackSubmitted = true
-                            HapticUtils.performSuccess(context)
-                            Toast.makeText(context, "Feedback submitted successfully!", Toast.LENGTH_SHORT).show()
+                            if (feedbackAttempt == currentAttempt) {
+                                feedbackSubmitting = false
+                                feedbackSubmitted = true
+                                HapticUtils.performSuccess(context)
+                                Toast.makeText(
+                                    context,
+                                    "Feedback submitted successfully!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                         .addOnFailureListener {
+                            if (feedbackAttempt == currentAttempt) {
+                                feedbackSubmitting = false
+                                Toast.makeText(
+                                    context,
+                                    "Couldn't submit feedback. Please try again.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+
+                    updateScope.launch {
+                        delay(15000)
+                        if (feedbackSubmitting && feedbackAttempt == currentAttempt) {
                             feedbackSubmitting = false
                             Toast.makeText(
                                 context,
-                                "Couldn't submit feedback. Please try again.",
+                                "Feedback submission timed out. Check your internet and try again.",
                                 Toast.LENGTH_LONG
                             ).show()
                         }
+                    }
                 }
             }
         )
@@ -1078,13 +1106,21 @@ fun DashboardScreen(
         UpdateAvailableDialog(
             updateInfo = updateInfo!!,
             isDownloading = isDownloadingUpdate,
+            downloadProgress = updateProgress,
             onDismiss = { if (!isDownloadingUpdate) updateInfo = null },
             onUpdate = {
                 isDownloadingUpdate = true
+                updateProgress = 0
                 updateScope.launch {
-                    val result = UpdateManager.downloadAndInstall(context, updateInfo!!)
+                    val info = updateInfo ?: return@launch
+                    val result = UpdateManager.downloadAndInstall(
+                        context = context,
+                        updateInfo = info,
+                        onProgress = { progress -> updateProgress = progress }
+                    )
                     isDownloadingUpdate = false
                     if (result.isFailure) {
+                        updateProgress = 0
                         Toast.makeText(
                             context,
                             "Update download failed. Please try again.",
@@ -2554,16 +2590,60 @@ private fun InAppFeedbackDialog(
 private fun UpdateAvailableDialog(
     updateInfo: UpdateInfo,
     isDownloading: Boolean,
+    downloadProgress: Int,
     onDismiss: () -> Unit,
     onUpdate: () -> Unit
 ) {
+    val sizeLabel = formatFileSize(updateInfo.sizeBytes)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Update Available", fontWeight = FontWeight.Bold) },
         text = {
-            Text(
-                "APS TOOLS " + updateInfo.versionName + " is available. Download and install the latest version directly from inside the app."
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    if (isDownloading) {
+                        "Downloading APS TOOLS " + updateInfo.versionName + "…"
+                    } else {
+                        "APS TOOLS " + updateInfo.versionName + " is available."
+                    },
+                    fontSize = 15.sp
+                )
+
+                Text(
+                    "APK size: " + sizeLabel,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (isDownloading) {
+                    LinearProgressIndicator(
+                        progress = { downloadProgress / 100f },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        downloadProgress.toString() + "% downloaded",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ApsBlue
+                    )
+                    Text(
+                        if (downloadProgress >= 100) {
+                            "Download complete. Opening installer…"
+                        } else {
+                            "Please keep the app open until the download reaches 100%."
+                        },
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        "Tap Download to download the APK. The Android install screen will open automatically after 100%.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         },
         confirmButton = {
             Button(
@@ -2571,7 +2651,10 @@ private fun UpdateAvailableDialog(
                 enabled = !isDownloading,
                 colors = ButtonDefaults.buttonColors(containerColor = ApsBlue)
             ) {
-                Text(if (isDownloading) "Downloading..." else "Update Now", fontWeight = FontWeight.Bold)
+                Text(
+                    if (isDownloading) "Downloading " + downloadProgress + "%" else "Download",
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         dismissButton = {
@@ -2580,6 +2663,17 @@ private fun UpdateAvailableDialog(
             }
         }
     )
+}
+
+private fun formatFileSize(bytes: Long): String {
+    if (bytes <= 0L) return "Unknown size"
+    val mb = bytes / (1024.0 * 1024.0)
+    return if (mb >= 1.0) {
+        String.format(java.util.Locale.US, "%.1f MB", mb)
+    } else {
+        val kb = bytes / 1024.0
+        String.format(java.util.Locale.US, "%.0f KB", kb)
+    }
 }
 
 @Composable
