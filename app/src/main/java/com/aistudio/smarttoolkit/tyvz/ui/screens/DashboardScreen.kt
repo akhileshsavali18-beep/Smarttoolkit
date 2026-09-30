@@ -1919,7 +1919,7 @@ private fun ProfileTabContent(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = if (isPremium) "Enjoy 100% ad-free experience" else "Remove banner & interstitial ads",
+                                    text = if (isPremium) "Ad-free experience • PRO tools unlocked" else "Go ad-free & unlock PRO tools",
                                     fontSize = 12.sp,
                                     color = Color.White.copy(alpha = 0.85f)
                                 )
