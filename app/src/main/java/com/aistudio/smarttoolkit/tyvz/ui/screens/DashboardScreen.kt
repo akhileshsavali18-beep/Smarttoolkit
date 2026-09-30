@@ -1854,12 +1854,6 @@ private fun ProfileTabContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Text(
-                        text = "Version ${BuildConfig.VERSION_NAME}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Box(
