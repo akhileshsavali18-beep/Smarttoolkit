@@ -15,7 +15,8 @@ import java.io.File
 
 data class UpdateInfo(
     val versionName: String,
-    val downloadUrl: String
+    val downloadUrl: String,
+    val sizeBytes: Long
 )
 
 object UpdateManager {
@@ -44,10 +45,11 @@ object UpdateManager {
                     }
 
                 val downloadUrl = asset?.optString("browser_download_url").orEmpty()
+                val sizeBytes = asset?.optLong("size", 0L) ?: 0L
                 if (tag.isBlank() || downloadUrl.isBlank()) return@withContext null
                 if (!isNewerVersion(tag, BuildConfig.VERSION_NAME)) return@withContext null
 
-                UpdateInfo(tag, downloadUrl)
+                UpdateInfo(tag, downloadUrl, sizeBytes)
             }
         } catch (_: Throwable) {
             null
@@ -66,32 +68,61 @@ object UpdateManager {
         return false
     }
 
-    suspend fun downloadAndInstall(context: Context, updateInfo: UpdateInfo): Result<Unit> =
-        withContext(Dispatchers.IO) {
-            try {
-                val request = Request.Builder().url(updateInfo.downloadUrl).build()
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        return@withContext Result.failure(
-                            Exception("Download failed: HTTP " + response.code)
-                        )
-                    }
-                    val body = response.body
-                        ?: return@withContext Result.failure(Exception("Empty APK download"))
-                    val apkFile = File(context.cacheDir, "APSTool-" + updateInfo.versionName + ".apk")
-                    body.byteStream().use { input ->
-                        apkFile.outputStream().use { output -> input.copyTo(output) }
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        installApk(context, apkFile)
-                    }
-                    Result.success(Unit)
+    suspend fun downloadAndInstall(
+        context: Context,
+        updateInfo: UpdateInfo,
+        onProgress: (Int) -> Unit = {}
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder().url(updateInfo.downloadUrl).build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(
+                        Exception("Download failed: HTTP " + response.code)
+                    )
                 }
-            } catch (e: Throwable) {
-                Result.failure(e)
+
+                val body = response.body
+                    ?: return@withContext Result.failure(Exception("Empty APK download"))
+
+                val totalBytes = body.contentLength().takeIf { it > 0L } ?: updateInfo.sizeBytes
+                val apkFile = File(context.cacheDir, "APSTool-" + updateInfo.versionName + ".apk")
+                var downloadedBytes = 0L
+                var lastProgress = -1
+
+                body.byteStream().use { input ->
+                    apkFile.outputStream().use { output ->
+                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read == -1) break
+                            output.write(buffer, 0, read)
+                            downloadedBytes += read
+
+                            if (totalBytes > 0L) {
+                                val progress = ((downloadedBytes * 100L) / totalBytes)
+                                    .coerceIn(0L, 100L).toInt()
+                                if (progress != lastProgress) {
+                                    lastProgress = progress
+                                    withContext(Dispatchers.Main) {
+                                        onProgress(progress)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    onProgress(100)
+                    installApk(context, apkFile)
+                }
+                Result.success(Unit)
             }
+        } catch (e: Throwable) {
+            Result.failure(e)
         }
+    }
 
     private fun installApk(context: Context, apkFile: File) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
