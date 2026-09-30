@@ -1337,6 +1337,10 @@ fun DashboardScreen(
                     onFeedback = {
                         HapticUtils.performClick(context)
                         showFeedbackDialog = true
+                    },
+                    onCheckForUpdate = {
+                        HapticUtils.performClick(context)
+                        checkForUpdate(showNoUpdateMessage = true)
                     }
                 )
             }
