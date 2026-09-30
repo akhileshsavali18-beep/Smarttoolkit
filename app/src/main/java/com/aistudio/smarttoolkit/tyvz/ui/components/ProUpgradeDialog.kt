@@ -115,9 +115,9 @@ fun ProUpgradeDialog(
 
                 Text(
                     text = if (isPremium) {
-                        "All ads removed & full privileges unlocked"
+                        "Ads removed and PRO tools unlocked"
                     } else {
-                        "Ad-free access with a monthly or yearly subscription"
+                        "Go ad-free and unlock selected PRO tools with a monthly or yearly subscription"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -137,7 +137,7 @@ fun ProUpgradeDialog(
                 ) {
                     ProFeatureRow(Icons.Default.Block, "Zero Advertisements", "Remove banner & interstitial ads entirely")
                     ProFeatureRow(Icons.Default.PictureAsPdf, "Unlimited Multi-Page PDF", "Convert unlimited images with high DPI")
-                    ProFeatureRow(Icons.Default.Star, "Pro Subscription", "Choose monthly or yearly access")
+                    ProFeatureRow(Icons.Default.Star, "Selected PRO Tools", "Unlock tools marked with the PRO badge")
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))
