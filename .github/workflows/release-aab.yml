@@ -1,9 +1,25 @@
-name: APS TOOLS - Signed Release AAB + APK
+name: APS TOOLS - Automatic Signed Release
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - "app/**"
+      - "build.gradle"
+      - "build.gradle.kts"
+      - "settings.gradle"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "ic_launcher.png"
+      - "google-services.json"
+  workflow_dispatch:
+
+concurrency:
+  group: aps-tools-release-main
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -15,12 +31,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
@@ -30,20 +48,68 @@ jobs:
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
           yes | sdkmanager --licenses
 
+      - name: Prepare automatic app version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FILE="app/build.gradle.kts"
+          CURRENT_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' "$FILE" | head -1)
+          CURRENT_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' "$FILE" | head -1)
+
+          test -n "$CURRENT_NAME"
+          test -n "$CURRENT_CODE"
+
+          LATEST_TAG=$(gh release view --json tagName -q .tagName 2>/dev/null || true)
+          LATEST_NAME="${LATEST_TAG#v}"
+
+          echo "Source version: $CURRENT_NAME (code $CURRENT_CODE)"
+          echo "Latest release: ${LATEST_NAME:-none}"
+
+          if [ -n "$LATEST_NAME" ] && [ "$CURRENT_NAME" != "$LATEST_NAME" ]; then
+            HIGHEST=$(printf '%s\n%s\n' "$CURRENT_NAME" "$LATEST_NAME" | sort -V | tail -1)
+            if [ "$HIGHEST" = "$LATEST_NAME" ]; then
+              echo "ERROR: source version $CURRENT_NAME is behind latest release $LATEST_NAME."
+              echo "Update the source version before releasing."
+              exit 1
+            fi
+
+            echo "Pending release $CURRENT_NAME detected. Reusing it; no second bump."
+          else
+            IFS='.' read -r -a PARTS <<< "$CURRENT_NAME"
+            LAST_INDEX=$(${#PARTS[@]} - 1)
+            PARTS[$LAST_INDEX]=$((PARTS[$LAST_INDEX] + 1))
+            NEW_NAME=$(IFS=.; echo "${PARTS[*]}")
+            NEW_CODE=$((CURRENT_CODE + 1))
+
+            sed -i -E "s/versionCode = [0-9]+/versionCode = $NEW_CODE/" "$FILE"
+            sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"$NEW_NAME\"/" "$FILE"
+
+            echo "Bumping APS TOOLS: $CURRENT_NAME/$CURRENT_CODE -> $NEW_NAME/$NEW_CODE"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$FILE"
+            git commit -m "chore: bump APS TOOLS to $NEW_NAME"
+            git push origin HEAD:main
+          fi
+
+          VERSION_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' "$FILE" | head -1)
+          VERSION_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' "$FILE" | head -1)
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+
       - name: Verify Android project source
         run: |
           test -f settings.gradle || test -f settings.gradle.kts
           test -f app/build.gradle || test -f app/build.gradle.kts
           echo "Building directly from repository source (no ZIP extraction)."
 
-      - name: Apply APS TOOLS ic_launcher logo everywhere
+      - name: Apply APS TOOLS launcher logo
         run: |
-          # Use the repository root ic_launcher.png as the single APS TOOLS logo asset.
           test -f ic_launcher.png
           mkdir -p app/src/main/res/drawable
           rm -f app/src/main/res/drawable/ic_launcher.xml
           cp -f ic_launcher.png app/src/main/res/drawable/ic_launcher.png
-          echo "Applied repository ic_launcher.png as the APS TOOLS logo."
 
       - name: Restore release keystore
         env:
@@ -55,7 +121,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.7.1'
+          gradle-version: "9.7.1"
 
       - name: Build signed release AAB and APK
         env:
@@ -85,17 +151,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
-          TAG="v${VERSION_NAME}"
-          APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -1)
+          TAG="v$VERSION_NAME"
+          APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name "*.apk" | head -1)
           RELEASE_APK="${RUNNER_TEMP}/APSTool.apk"
-          cp -f "$APK" "$RELEASE_APK"
+
           test -n "$VERSION_NAME"
-          test -s "$RELEASE_APK"
+          test -s "$APK"
+
+          cp -f "$APK" "$RELEASE_APK"
+
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; replacing its APK with this build."
+            echo "Release $TAG already exists; replacing its APK with this successful build."
             gh release upload "$TAG" "$RELEASE_APK" --clobber
           else
             gh release create "$TAG" "$RELEASE_APK" --title "APS TOOLS $VERSION_NAME" --generate-notes
           fi
-          echo "Published APK for $TAG"
+
+          echo "Published APS TOOLS $VERSION_NAME (versionCode $VERSION_CODE)"
