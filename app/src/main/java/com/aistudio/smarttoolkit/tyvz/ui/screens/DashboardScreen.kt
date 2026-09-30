@@ -6,6 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import com.aistudio.smarttoolkit.tyvz.ads.AdManager
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 import com.aistudio.smarttoolkit.tyvz.ads.ConsentManager
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -92,6 +94,7 @@ import androidx.compose.material.icons.filled.SquareFoot
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.TouchApp
@@ -130,6 +133,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -152,12 +157,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.smarttoolkit.tyvz.R
 import com.aistudio.smarttoolkit.tyvz.ads.StickyBannerAd
+import com.aistudio.smarttoolkit.tyvz.BuildConfig
 import com.aistudio.smarttoolkit.tyvz.billing.BillingManager
 import com.aistudio.smarttoolkit.tyvz.model.AppPreferencesManager
 import com.aistudio.smarttoolkit.tyvz.model.AppScreen
 import com.aistudio.smarttoolkit.tyvz.model.ThemeMode
 import com.aistudio.smarttoolkit.tyvz.model.ToolCategory
 import com.aistudio.smarttoolkit.tyvz.ui.components.ProUpgradeDialog
+import com.aistudio.smarttoolkit.tyvz.update.UpdateInfo
+import com.aistudio.smarttoolkit.tyvz.update.UpdateManager
 import com.aistudio.smarttoolkit.tyvz.ui.theme.AgeOrange
 import com.aistudio.smarttoolkit.tyvz.ui.theme.AgeOrangeBg
 import com.aistudio.smarttoolkit.tyvz.ui.theme.ApsBlue
@@ -259,6 +267,7 @@ import com.aistudio.smarttoolkit.tyvz.ui.theme.WorldClockPurple
 import com.aistudio.smarttoolkit.tyvz.ui.theme.WorldClockPurpleBg
 import com.aistudio.smarttoolkit.tyvz.utils.HapticUtils
 import java.util.Calendar
+import kotlinx.coroutines.launch
 
 data class ToolDefinition(
     val screen: AppScreen,
@@ -309,6 +318,24 @@ fun DashboardScreen(
     var showFeedbackDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showCoffeeDialog by remember { mutableStateOf(false) }
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var isDownloadingUpdate by remember { mutableStateOf(false) }
+    val updateScope = rememberCoroutineScope()
+
+    fun checkForUpdate(showNoUpdateMessage: Boolean = false) {
+        updateScope.launch {
+            val result = UpdateManager.checkForUpdate()
+            if (result != null) {
+                updateInfo = result
+            } else if (showNoUpdateMessage) {
+                Toast.makeText(context, "You are using the latest APS TOOLS version.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        checkForUpdate()
+    }
 
     // Search query on Home / Categories
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -866,11 +893,14 @@ fun DashboardScreen(
     // APS TOOLS is distributed from its website, not Google Play.
     fun shareAppAction() {
         HapticUtils.performClick(context)
-        try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apsToolsWebsite)))
-        } catch (_: Exception) {
-            Toast.makeText(context, "Unable to open APS TOOLS website", Toast.LENGTH_SHORT).show()
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(
+                Intent.EXTRA_TEXT,
+                "Try APS TOOLS — 50+ smart utility tools in one app. Download: $apsToolsWebsite"
+            )
         }
+        context.startActivity(Intent.createChooser(shareIntent, "Refer APS TOOLS"))
     }
 
     fun rateAppAction() {
@@ -893,17 +923,31 @@ fun DashboardScreen(
         InAppFeedbackDialog(
             onDismiss = { showFeedbackDialog = false },
             onSubmit = { rating, comment ->
-                showFeedbackDialog = false
-                HapticUtils.performSuccess(context)
-                try {
-                    val intent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:akhileshsworks@gmail.com")
-                        putExtra(Intent.EXTRA_SUBJECT, "APS Tools Feedback ($rating★)")
-                        putExtra(Intent.EXTRA_TEXT, "Rating: $rating / 5\n\nFeedback:\n$comment")
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Send Feedback via Email"))
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Thank you for your $rating★ feedback!", Toast.LENGTH_LONG).show()
+                val cleanComment = comment.trim()
+                if (cleanComment.isBlank()) {
+                    Toast.makeText(context, "Please enter your feedback.", Toast.LENGTH_SHORT).show()
+                } else {
+                    val feedback = hashMapOf<String, Any>(
+                        "rating" to rating,
+                        "comment" to cleanComment,
+                        "appVersion" to BuildConfig.VERSION_NAME,
+                        "createdAt" to FieldValue.serverTimestamp()
+                    )
+                    FirebaseFirestore.getInstance()
+                        .collection("feedback")
+                        .add(feedback)
+                        .addOnSuccessListener {
+                            showFeedbackDialog = false
+                            HapticUtils.performSuccess(context)
+                            Toast.makeText(context, "Feedback submitted successfully. Thank you!", Toast.LENGTH_LONG).show()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(
+                                context,
+                                "Couldn't submit feedback. Please check your internet connection.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                 }
             }
         )
@@ -1013,6 +1057,28 @@ fun DashboardScreen(
             dismissButton = {
                 TextButton(onClick = { showCoffeeDialog = false }) {
                     Text("Close")
+                }
+            }
+        )
+    }
+
+    if (updateInfo != null) {
+        UpdateAvailableDialog(
+            updateInfo = updateInfo!!,
+            isDownloading = isDownloadingUpdate,
+            onDismiss = { if (!isDownloadingUpdate) updateInfo = null },
+            onUpdate = {
+                isDownloadingUpdate = true
+                updateScope.launch {
+                    val result = UpdateManager.downloadAndInstall(context, updateInfo!!)
+                    isDownloadingUpdate = false
+                    if (result.isFailure) {
+                        Toast.makeText(
+                            context,
+                            "Update download failed. Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
         )
@@ -1747,7 +1813,8 @@ private fun ProfileTabContent(
     onRateUs: () -> Unit,
     onPrivacyPolicy: () -> Unit,
     onBuyCoffee: () -> Unit,
-    onFeedback: () -> Unit
+    onFeedback: () -> Unit,
+    onCheckForUpdate: () -> Unit
 ) {
     LazyColumn(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 80.dp),
@@ -1788,7 +1855,7 @@ private fun ProfileTabContent(
                     )
 
                     Text(
-                        text = "Version 2.5 (Production Release)",
+                        text = "Version ${BuildConfig.VERSION_NAME}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1961,8 +2028,17 @@ private fun ProfileTabContent(
                     SettingsActionRow(
                         icon = Icons.Default.Feedback,
                         title = "Send Feedback",
-                        subtitle = "Report issues or suggest new utilities",
+                        subtitle = "Rate APS TOOLS and send feedback directly",
                         onClick = onFeedback
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    SettingsActionRow(
+                        icon = Icons.Default.SystemUpdate,
+                        title = "Check for Updates",
+                        subtitle = "Check and install the latest APS TOOLS APK",
+                        onClick = onCheckForUpdate
                     )
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -2433,6 +2509,38 @@ private fun InAppFeedbackDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun UpdateAvailableDialog(
+    updateInfo: UpdateInfo,
+    isDownloading: Boolean,
+    onDismiss: () -> Unit,
+    onUpdate: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Update Available", fontWeight = FontWeight.Bold) },
+        text = {
+            Text(
+                "APS TOOLS " + updateInfo.versionName + " is available. Download and install the latest version directly from inside the app."
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onUpdate,
+                enabled = !isDownloading,
+                colors = ButtonDefaults.buttonColors(containerColor = ApsBlue)
+            ) {
+                Text(if (isDownloading) "Downloading..." else "Update Now", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isDownloading) {
+                Text("Later")
             }
         }
     )
