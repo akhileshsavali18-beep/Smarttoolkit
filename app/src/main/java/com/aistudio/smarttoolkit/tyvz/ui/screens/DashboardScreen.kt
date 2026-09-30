@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -131,6 +132,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -296,14 +298,20 @@ fun DashboardScreen(
     }
     val isPremium by billingManager.isPremium.collectAsState()
 
-    var activeTab by remember { mutableStateOf(NavTab.HOME) }
+    // Preserve the selected bottom tab and each tab's scroll position when returning from tools.
+    var activeTab by rememberSaveable { mutableStateOf(NavTab.HOME) }
+    val homeListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val categoriesListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val favouritesListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val profileListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    var selectedCategoryFilter by rememberSaveable { mutableStateOf(ToolCategory.ALL) }
     var showProDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showCoffeeDialog by remember { mutableStateOf(false) }
 
     // Search query on Home / Categories
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     val allTools = remember {
         listOf(
@@ -853,26 +861,24 @@ fun DashboardScreen(
         allTools.filter { favoriteScreens.contains(it.screen.name) }
     }
 
+    val apsToolsWebsite = "https://akhileshsavali18-beep.github.io/Smarttoolkit/"
+
+    // APS TOOLS is distributed from its website, not Google Play.
     fun shareAppAction() {
         HapticUtils.performClick(context)
-        val shareIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(
-                Intent.EXTRA_TEXT,
-                "Check out APS TOOLS - The ultimate all-in-one offline utility app! Compress photos, convert PDF, compute GST, loan EMI, BMI, Unit Converter, and more.\n\nDownload on Google Play: https://play.google.com/store/apps/details?id=${context.packageName}"
-            )
-            type = "text/plain"
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apsToolsWebsite)))
+        } catch (_: Exception) {
+            Toast.makeText(context, "Unable to open APS TOOLS website", Toast.LENGTH_SHORT).show()
         }
-        context.startActivity(Intent.createChooser(shareIntent, "Share APS Tools"))
     }
 
     fun rateAppAction() {
         HapticUtils.performClick(context)
-        val pkg = context.packageName
         try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")))
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apsToolsWebsite)))
         } catch (_: Exception) {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$pkg")))
+            Toast.makeText(context, "Unable to open APS TOOLS website", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -932,13 +938,13 @@ fun DashboardScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.LocalCafe, contentDescription = null, tint = Color(0xFFD97706))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Support Akhilesh Systems ☕", fontWeight = FontWeight.Bold)
+                    Text("Support APS Tools ☕", fontWeight = FontWeight.Bold)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Thank you for supporting independent open development of APS Tools by Akhilesh Systems!\n\nChoose a support option below:",
+                        text = "Help us keep APS TOOLS free and improving.\n\nChoose your preferred support amount on the official support page: ₹10, ₹50, ₹100 or a custom amount.",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -967,7 +973,7 @@ fun DashboardScreen(
                                     AdManager.loadRewardedAd(activity)
                                 }
                             } else {
-                                Toast.makeText(context, "Thank you for supporting Akhilesh Systems!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Thank you for supporting APS TOOLS!", Toast.LENGTH_SHORT).show()
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
@@ -997,8 +1003,8 @@ fun DashboardScreen(
                         Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column(horizontalAlignment = Alignment.Start) {
-                            Text("Visit Official Website", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("Explore project updates and connect with Akhilesh Systems", fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
+                            Text("Open Support APS Tools", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Choose ₹10, ₹50, ₹100 or a custom amount on the support page", fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
                         }
                     }
                 }
@@ -1185,7 +1191,7 @@ fun DashboardScreen(
                 ExtendedFloatingActionButton(
                     onClick = { shareAppAction() },
                     icon = { Icon(Icons.Default.Share, contentDescription = "Share App") },
-                    text = { Text("Share App", fontWeight = FontWeight.Bold) },
+                    text = { Text("Refer & Download", fontWeight = FontWeight.Bold) },
                     containerColor = ApsBlue,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(18.dp),
@@ -1201,6 +1207,7 @@ fun DashboardScreen(
         ) {
             when (activeTab) {
                 NavTab.HOME -> HomeTabContent(
+                    listState = homeListState,
                     allTools = allTools,
                     toolOfTheDay = toolOfTheDay,
                     recentTools = recentTools,
@@ -1216,6 +1223,9 @@ fun DashboardScreen(
                 )
 
                 NavTab.CATEGORIES -> CategoriesTabContent(
+                    listState = categoriesListState,
+                    selectedCategoryFilter = selectedCategoryFilter,
+                    onCategoryFilterChange = { selectedCategoryFilter = it },
                     allTools = allTools,
                     favoriteScreens = favoriteScreens,
                     onToggleFavorite = { screenName ->
@@ -1226,6 +1236,7 @@ fun DashboardScreen(
                 )
 
                 NavTab.FAVOURITES -> FavoritesTabContent(
+                    listState = favouritesListState,
                     favoriteTools = favoriteTools,
                     onToggleFavorite = { screenName ->
                         HapticUtils.performClick(context)
@@ -1236,6 +1247,7 @@ fun DashboardScreen(
                 )
 
                 NavTab.PROFILE -> ProfileTabContent(
+                    listState = profileListState,
                     isPremium = isPremium,
                     themeMode = themeMode,
                     onSetThemeMode = { mode ->
@@ -1271,6 +1283,7 @@ fun DashboardScreen(
 // -----------------------------------------------------------------------------------------
 @Composable
 private fun HomeTabContent(
+    listState: LazyListState,
     allTools: List<ToolDefinition>,
     toolOfTheDay: ToolDefinition,
     recentTools: List<ToolDefinition>,
@@ -1298,6 +1311,7 @@ private fun HomeTabContent(
     LazyColumn(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
         // Search Bar
@@ -1480,6 +1494,9 @@ private fun HomeTabContent(
 // -----------------------------------------------------------------------------------------
 @Composable
 private fun CategoriesTabContent(
+    listState: LazyListState,
+    selectedCategoryFilter: ToolCategory,
+    onCategoryFilterChange: (ToolCategory) -> Unit,
     allTools: List<ToolDefinition>,
     favoriteScreens: Set<String>,
     onToggleFavorite: (String) -> Unit,
@@ -1491,8 +1508,6 @@ private fun CategoriesTabContent(
     val categories = remember {
         ToolCategory.values().filter { it != ToolCategory.ALL }
     }
-    var selectedCategoryFilter by remember { mutableStateOf(ToolCategory.ALL) }
-
     val displayedTools = remember(selectedCategoryFilter, allTools) {
         if (selectedCategoryFilter == ToolCategory.ALL) {
             allTools
@@ -1504,6 +1519,7 @@ private fun CategoriesTabContent(
     LazyColumn(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
         // Filter Chips Bar
@@ -1517,7 +1533,7 @@ private fun CategoriesTabContent(
                         selected = selectedCategoryFilter == ToolCategory.ALL,
                         onClick = {
                             HapticUtils.performClick(context)
-                            selectedCategoryFilter = ToolCategory.ALL
+                            onCategoryFilterChange(ToolCategory.ALL)
                         },
                         label = { Text("All Categories", fontWeight = FontWeight.Bold) },
                         colors = FilterChipDefaults.filterChipColors(
@@ -1533,7 +1549,7 @@ private fun CategoriesTabContent(
                         selected = selectedCategoryFilter == cat,
                         onClick = {
                             HapticUtils.performClick(context)
-                            selectedCategoryFilter = cat
+                            onCategoryFilterChange(cat)
                         },
                         label = { Text(cat.title, fontWeight = FontWeight.Bold) },
                         colors = FilterChipDefaults.filterChipColors(
@@ -1607,6 +1623,7 @@ private fun CategoriesTabContent(
 // -----------------------------------------------------------------------------------------
 @Composable
 private fun FavoritesTabContent(
+    listState: LazyListState,
     favoriteTools: List<ToolDefinition>,
     onToggleFavorite: (String) -> Unit,
     onNavigateToTool: (AppScreen) -> Unit,
@@ -1617,6 +1634,7 @@ private fun FavoritesTabContent(
     LazyColumn(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
+        state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
         item {
@@ -1720,6 +1738,7 @@ private fun FavoritesTabContent(
 // -----------------------------------------------------------------------------------------
 @Composable
 private fun ProfileTabContent(
+    listState: LazyListState,
     isPremium: Boolean,
     themeMode: ThemeMode,
     onSetThemeMode: (ThemeMode) -> Unit,
@@ -1733,6 +1752,7 @@ private fun ProfileTabContent(
     LazyColumn(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
         // App Profile Card Header
@@ -1922,8 +1942,8 @@ private fun ProfileTabContent(
 
                     SettingsActionRow(
                         icon = Icons.Default.Share,
-                        title = "Share APS Tools",
-                        subtitle = "Recommend to friends and colleagues",
+                        title = "Refer & Download",
+                        subtitle = "Open the APS TOOLS website and download the app",
                         onClick = onShareApp
                     )
 
@@ -1931,8 +1951,8 @@ private fun ProfileTabContent(
 
                     SettingsActionRow(
                         icon = Icons.Default.ThumbUp,
-                        title = "Rate Us on Play Store",
-                        subtitle = "Help us grow with a 5-star review",
+                        title = "Visit APS TOOLS Website",
+                        subtitle = "Download APS TOOLS and get the latest version",
                         onClick = onRateUs
                     )
 
@@ -1940,7 +1960,7 @@ private fun ProfileTabContent(
 
                     SettingsActionRow(
                         icon = Icons.Default.Feedback,
-                        title = "Send In-App Feedback",
+                        title = "Send Feedback",
                         subtitle = "Report issues or suggest new utilities",
                         onClick = onFeedback
                     )
@@ -1949,8 +1969,8 @@ private fun ProfileTabContent(
 
                     SettingsActionRow(
                         icon = Icons.Default.LocalCafe,
-                        title = "Buy Developer a Coffee ☕",
-                        subtitle = "Support independent open development",
+                        title = "Support APS Tools ☕",
+                        subtitle = "Help us keep APS TOOLS free and improving",
                         onClick = onBuyCoffee
                     )
 
