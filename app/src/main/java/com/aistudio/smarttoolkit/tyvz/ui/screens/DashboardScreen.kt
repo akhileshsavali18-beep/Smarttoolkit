@@ -316,6 +316,8 @@ fun DashboardScreen(
     var selectedCategoryFilter by rememberSaveable { mutableStateOf(ToolCategory.ALL) }
     var showProDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    var feedbackSubmitting by remember { mutableStateOf(false) }
+    var feedbackSubmitted by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showCoffeeDialog by remember { mutableStateOf(false) }
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
@@ -921,12 +923,20 @@ fun DashboardScreen(
 
     if (showFeedbackDialog) {
         InAppFeedbackDialog(
-            onDismiss = { showFeedbackDialog = false },
+            isSubmitting = feedbackSubmitting,
+            isSubmitted = feedbackSubmitted,
+            onDismiss = {
+                if (!feedbackSubmitting) {
+                    showFeedbackDialog = false
+                    feedbackSubmitted = false
+                }
+            },
             onSubmit = { rating, comment ->
                 val cleanComment = comment.trim()
                 if (cleanComment.isBlank()) {
                     Toast.makeText(context, "Please enter your feedback.", Toast.LENGTH_SHORT).show()
                 } else {
+                    feedbackSubmitting = true
                     val feedback = hashMapOf<String, Any>(
                         "rating" to rating,
                         "comment" to cleanComment,
@@ -937,14 +947,16 @@ fun DashboardScreen(
                         .collection("feedback")
                         .add(feedback)
                         .addOnSuccessListener {
-                            showFeedbackDialog = false
+                            feedbackSubmitting = false
+                            feedbackSubmitted = true
                             HapticUtils.performSuccess(context)
-                            Toast.makeText(context, "Feedback submitted successfully. Thank you!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Feedback submitted successfully!", Toast.LENGTH_SHORT).show()
                         }
                         .addOnFailureListener {
+                            feedbackSubmitting = false
                             Toast.makeText(
                                 context,
-                                "Couldn't submit feedback. Please check your internet connection.",
+                                "Couldn't submit feedback. Please try again.",
                                 Toast.LENGTH_LONG
                             ).show()
                         }
@@ -2015,15 +2027,6 @@ private fun ProfileTabContent(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsActionRow(
-                        icon = Icons.Default.ThumbUp,
-                        title = "Visit APS TOOLS Website",
-                        subtitle = "Download APS TOOLS and get the latest version",
-                        onClick = onRateUs
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    SettingsActionRow(
                         icon = Icons.Default.Feedback,
                         title = "Send Feedback",
                         subtitle = "Rate APS TOOLS and send feedback directly",
@@ -2444,6 +2447,8 @@ private fun DashboardToolCard(
 // In-App Feedback Dialog
 @Composable
 private fun InAppFeedbackDialog(
+    isSubmitting: Boolean,
+    isSubmitted: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (Int, String) -> Unit
 ) {
@@ -2461,52 +2466,85 @@ private fun InAppFeedbackDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "How has your experience been with APS Tools?",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (isSubmitted) {
+                    Text(
+                        text = "✓ Feedback submitted successfully",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ApsBlue
+                    )
+                    Text(
+                        text = "Thank you for helping us improve APS TOOLS.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "How has your experience been with APS Tools?",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                // Star Rating
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    for (i in 1..5) {
-                        IconButton(onClick = { rating = i }) {
-                            Icon(
-                                imageVector = if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder,
-                                contentDescription = "$i Stars",
-                                tint = if (i <= rating) ProGold else MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.size(32.dp)
-                            )
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        for (i in 1..5) {
+                            IconButton(
+                                onClick = { if (!isSubmitting) rating = i },
+                                enabled = !isSubmitting
+                            ) {
+                                Icon(
+                                    imageVector = if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder,
+                                    contentDescription = "$i Stars",
+                                    tint = if (i <= rating) ProGold else MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                         }
                     }
-                }
 
-                OutlinedTextField(
-                    value = comment,
-                    onValueChange = { comment = it },
-                    placeholder = { Text("What tools would you like us to add or improve?") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    minLines = 3,
-                    maxLines = 5
-                )
+                    OutlinedTextField(
+                        value = comment,
+                        onValueChange = { if (!isSubmitting) comment = it },
+                        placeholder = { Text("Tell us what you like or what we should improve...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        minLines = 3,
+                        maxLines = 5,
+                        enabled = !isSubmitting
+                    )
+                }
             }
         },
         confirmButton = {
-            Button(
-                onClick = { onSubmit(rating, comment) },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ApsBlue)
-            ) {
-                Text("Submit Feedback", fontWeight = FontWeight.Bold)
+            if (isSubmitted) {
+                Button(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ApsBlue)
+                ) {
+                    Text("Done", fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Button(
+                    onClick = { onSubmit(rating, comment) },
+                    enabled = !isSubmitting,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ApsBlue)
+                ) {
+                    Text(
+                        if (isSubmitting) "Submitting..." else "Submit Feedback",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            if (!isSubmitted) {
+                TextButton(onClick = onDismiss, enabled = !isSubmitting) {
+                    Text("Cancel")
+                }
             }
         }
     )
