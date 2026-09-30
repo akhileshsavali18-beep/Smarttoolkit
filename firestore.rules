@@ -10,7 +10,7 @@ service cloud.firestore {
         request.resource.data.comment is string &&
         request.resource.data.comment.size() <= 2000 &&
         request.resource.data.appVersion is string &&
-        request.resource.data.createdAt == request.time;
+        request.resource.data.createdAt is timestamp;
       allow read, update, delete: if false;
     }
   }
