@@ -271,6 +271,15 @@ import java.util.Calendar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private val V1_VISIBLE_CATEGORIES = setOf(
+    ToolCategory.DAILY_UTILITIES,
+    ToolCategory.MATH_EDUCATION,
+    ToolCategory.FINANCE_BUSINESS,
+    ToolCategory.QR_SCANNER,
+    ToolCategory.PDF_TOOLS,
+    ToolCategory.IMAGE_TOOLS
+)
+
 data class ToolDefinition(
     val screen: AppScreen,
     val title: String,
@@ -307,7 +316,6 @@ fun DashboardScreen(
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
     }
-    val isPremium by billingManager.isPremium.collectAsState()
 
     // Preserve the selected bottom tab and each tab's scroll position when returning from tools.
     var activeTab by rememberSaveable { mutableStateOf(NavTab.HOME) }
@@ -316,7 +324,6 @@ fun DashboardScreen(
     val favouritesListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val profileListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     var selectedCategoryFilter by rememberSaveable { mutableStateOf(ToolCategory.ALL) }
-    var showProDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
     var feedbackSubmitting by remember { mutableStateOf(false) }
     var feedbackSubmitted by remember { mutableStateOf(false) }
@@ -878,20 +885,25 @@ fun DashboardScreen(
         )
     }
 
+    // Version 1 keeps all tool implementations in the source but exposes only the selected six categories.
+    val visibleTools = remember(allTools) {
+        allTools.filter { it.category in V1_VISIBLE_CATEGORIES }
+    }
+
     // Tool of the Day (dynamically rotates daily)
     val toolOfTheDay = remember(allTools) {
         val day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        allTools[day % allTools.size]
+        visibleTools[day % visibleTools.size]
     }
 
     // Resolve recent tool definitions
-    val recentTools = remember(recentScreenNames, allTools) {
-        recentScreenNames.mapNotNull { name -> allTools.find { it.screen.name == name } }
+    val recentTools = remember(recentScreenNames, visibleTools) {
+        recentScreenNames.mapNotNull { name -> visibleTools.find { it.screen.name == name } }
     }
 
     // Favorite tool definitions
-    val favoriteTools = remember(favoriteScreens, allTools) {
-        allTools.filter { favoriteScreens.contains(it.screen.name) }
+    val favoriteTools = remember(favoriteScreens, visibleTools) {
+        visibleTools.filter { favoriteScreens.contains(it.screen.name) }
     }
 
     val apsToolsWebsite = "https://akhileshsavali18-beep.github.io/Smarttoolkit/"
@@ -903,26 +915,10 @@ fun DashboardScreen(
             type = "text/plain"
             putExtra(
                 Intent.EXTRA_TEXT,
-                "Try APS TOOLS — 50+ smart utility tools in one app. Download: $apsToolsWebsite"
+                "Try APS TOOLS — 25+ smart utility tools in one app. Download: $apsToolsWebsite"
             )
         }
         context.startActivity(Intent.createChooser(shareIntent, "Refer APS TOOLS"))
-    }
-
-    fun rateAppAction() {
-        HapticUtils.performClick(context)
-        try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apsToolsWebsite)))
-        } catch (_: Exception) {
-            Toast.makeText(context, "Unable to open APS TOOLS website", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    if (showProDialog) {
-        ProUpgradeDialog(
-            billingManager = billingManager,
-            onDismissRequest = { showProDialog = false }
-        )
     }
 
     if (showFeedbackDialog) {
@@ -1205,47 +1201,6 @@ fun DashboardScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    // PRO Subscription Button
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = if (isPremium) {
-                                        listOf(Color(0xFFFDE68A), Color(0xFFFBBF24))
-                                    } else {
-                                        listOf(Color(0xFFF59E0B), Color(0xFFD97706))
-                                    }
-                                )
-                            )
-                            .clickable {
-                                HapticUtils.performClick(context)
-                                showProDialog = true
-                            }
-                            .padding(horizontal = 12.dp, vertical = 7.dp)
-                            .testTag("open_pro_button")
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.WorkspacePremium,
-                                contentDescription = "PRO Subscription",
-                                tint = if (isPremium) Color(0xFF78350F) else Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (isPremium) "PRO" else "GO PRO",
-                                fontWeight = FontWeight.Black,
-                                fontSize = 12.sp,
-                                letterSpacing = 0.5.sp,
-                                color = if (isPremium) Color(0xFF78350F) else Color.White
-                            )
-                        }
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -1256,7 +1211,7 @@ fun DashboardScreen(
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Sticky Banner Ad (hidden for PRO users)
                 StickyBannerAd(
-                    isPremium = isPremium,
+                    isPremium = false,
                     modifier = Modifier.testTag("sticky_banner_ad")
                 )
 
@@ -1323,7 +1278,7 @@ fun DashboardScreen(
             when (activeTab) {
                 NavTab.HOME -> HomeTabContent(
                     listState = homeListState,
-                    allTools = allTools,
+                    allTools = visibleTools,
                     toolOfTheDay = toolOfTheDay,
                     recentTools = recentTools,
                     favoriteScreens = favoriteScreens,
@@ -1341,7 +1296,7 @@ fun DashboardScreen(
                     listState = categoriesListState,
                     selectedCategoryFilter = selectedCategoryFilter,
                     onCategoryFilterChange = { selectedCategoryFilter = it },
-                    allTools = allTools,
+                    allTools = visibleTools,
                     favoriteScreens = favoriteScreens,
                     onToggleFavorite = { screenName ->
                         HapticUtils.performClick(context)
@@ -1363,18 +1318,12 @@ fun DashboardScreen(
 
                 NavTab.PROFILE -> ProfileTabContent(
                     listState = profileListState,
-                    isPremium = isPremium,
                     themeMode = themeMode,
                     onSetThemeMode = { mode ->
                         HapticUtils.performClick(context)
                         preferencesManager.setThemeMode(mode)
                     },
-                    onGoPro = {
-                        HapticUtils.performClick(context)
-                        showProDialog = true
-                    },
                     onShareApp = { shareAppAction() },
-                    onRateUs = { rateAppAction() },
                     onPrivacyPolicy = {
                         HapticUtils.performClick(context)
                         showPrivacyDialog = true
@@ -1625,7 +1574,7 @@ private fun CategoriesTabContent(
     // Show every real category (11) in the Categories tab.
     // ALL is rendered separately as the first "All Categories" chip.
     val categories = remember {
-        ToolCategory.values().filter { it != ToolCategory.ALL }
+        ToolCategory.values().filter { it != ToolCategory.ALL && it in V1_VISIBLE_CATEGORIES }
     }
     val displayedTools = remember(selectedCategoryFilter, allTools) {
         if (selectedCategoryFilter == ToolCategory.ALL) {
@@ -1858,12 +1807,9 @@ private fun FavoritesTabContent(
 @Composable
 private fun ProfileTabContent(
     listState: LazyListState,
-    isPremium: Boolean,
     themeMode: ThemeMode,
     onSetThemeMode: (ThemeMode) -> Unit,
-    onGoPro: () -> Unit,
     onShareApp: () -> Unit,
-    onRateUs: () -> Unit,
     onPrivacyPolicy: () -> Unit,
     onBuyCoffee: () -> Unit,
     onFeedback: () -> Unit,
@@ -1920,70 +1866,6 @@ private fun ProfileTabContent(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = ApsBlue
-                        )
-                    }
-                }
-            }
-        }
-
-        // PRO Upgrade Banner Card
-        item {
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onGoPro)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = if (isPremium) {
-                                    listOf(Color(0xFF065F46), Color(0xFF059669))
-                                } else {
-                                    listOf(Color(0xFFB45309), Color(0xFFF59E0B))
-                                }
-                            )
-                        )
-                        .padding(18.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.WorkspacePremium,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = if (isPremium) "PRO Subscription Active" else "Unlock APS TOOLS PRO",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = if (isPremium) "Ad-free experience • PRO tools unlocked" else "Go ad-free & unlock PRO tools",
-                                    fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.85f)
-                                )
-                            }
-                        }
-
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -2057,7 +1939,7 @@ private fun ProfileTabContent(
                     SettingsActionRow(
                         icon = Icons.Default.Share,
                         title = "Refer & Download",
-                        subtitle = "Open the APS TOOLS website and download the app",
+                        subtitle = "Share APS TOOLS with friends and download the app",
                         onClick = onShareApp
                     )
 
