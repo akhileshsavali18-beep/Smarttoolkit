@@ -1,246 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APS TOOLS - 50+ Smart Utility Tools | A28 TECHNOLOGIES</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    </style>
-</head>
-<body class="bg-[#070b14] text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-
-    <!-- Header Navigation with App Icon & Clean Title -->
-    <header class="border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-50 bg-[#070b14]/90 px-6 py-4">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            
-            <!-- Real App Icon & Brand Name -->
-            <a href="index.html" class="flex items-center space-x-3 group">
-                <img src="ic_launcher.png" alt="APS TOOLS" class="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform" onerror="this.src='https://via.placeholder.com/40/2563eb/ffffff?text=APS'" />
-                <span class="text-xl font-extrabold tracking-tight text-white block leading-none">APS TOOLS</span>
-            </a>
-
-            <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center space-x-6 text-sm font-semibold text-slate-300">
-                <a href="index.html" class="text-white hover:text-blue-400 transition">Home</a>
-                <a href="#tools" class="hover:text-blue-400 transition">50+ Tools List</a>
-                <a href="products.html" class="hover:text-blue-400 transition">Products & Pricing</a>
-                <a href="donate.html" class="hover:text-blue-400 transition">☕ Support App</a>
-                <a href="delivery-policy.html" class="hover:text-blue-400 transition">Delivery</a>
-                <a href="terms.html" class="hover:text-blue-400 transition">Terms</a>
-                <a href="refund-policy.html" class="hover:text-blue-400 transition">Refund Policy</a>
-                <a href="privacy-policy.html" class="hover:text-blue-400 transition">Privacy Policy</a>
-                <a href="about.html" class="hover:text-blue-400 transition">About Us</a>
-                <a href="contact.html" class="hover:text-blue-400 transition">Contact Us</a>
-                <a href="mailto:akhileshsworks@gmail.com" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">Contact</a>
-            </nav>
-
-            <!-- Hamburger Button (Mobile) -->
-            <button onclick="toggleMenu()" class="md:hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 focus:outline-none" aria-label="Toggle navigation">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-        </div>
-
-        <!-- Mobile Dropdown Menu -->
-        <div id="mobileMenu" class="hidden md:hidden px-4 pt-4 pb-6 space-y-3 border-t border-slate-800/80 mt-3 bg-[#070b14]">
-            <a href="index.html" class="block px-3 py-2 rounded-xl text-base font-medium text-white bg-slate-900/80">🏠 Home</a>
-            <a href="#tools" onclick="toggleMenu()" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">⚡ All 50+ Tools</a>
-            <a href="donate.html" class="block px-3 py-2 rounded-xl text-base font-medium text-amber-400 hover:bg-slate-900">☕ Support Developer (UPI)</a>
-            <a href="terms.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">📜 Terms & Conditions</a>
-            <a href="products.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">💳 Products & Pricing</a>
-            <a href="delivery-policy.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">📦 Delivery / Shipping</a>
-            <a href="refund-policy.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">↩️ Refund & Cancellation</a>
-            <a href="privacy-policy.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">🛡️ Privacy Policy</a>
-            <a href="about.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">🏢 About Us</a>
-            <a href="contact.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">✉️ Contact Us</a>
-        </div>
-    </header>
-
-    <!-- Main Hero -->
-    <main class="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center flex-1">
-        <span class="px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 inline-block mb-6 shadow-sm">
-            Developed by A28 TECHNOLOGIES • Offline-first utilities • Privacy-conscious design
-        </span>
-        
-        <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white mb-6 leading-tight">
-            Simplify Every Task with <br/>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-teal-400">50+ Smart Offline Tools</span>
-        </h1>
-        
-        <p class="text-slate-400 max-w-2xl mx-auto text-base sm:text-lg mb-10 leading-relaxed">
-            From Photo Compression and Multi-Page PDF creation to GST Calculators, Hardware Compass, and Health Metrics — access 50+ lightweight utilities, with many tools designed to work directly on your device without requiring an account.
-        </p>
-
-        <!-- Direct APK Download CTA -->
-        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20 max-w-md mx-auto">
-            <a href="https://github.com/akhileshsavali18-beep/Smarttoolkit/releases/latest/download/APSTool.apk" class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-3">
-    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
-    </svg>
-    <span>Download APK (Direct)</span>
-            </a>
-            
-
-            <div class="w-full sm:w-auto px-7 py-4 rounded-2xl border border-slate-800 bg-slate-900/60 text-slate-400 font-semibold flex items-center justify-center space-x-2 cursor-not-allowed">
-                <span>Google Play (Coming Soon)</span>
-            </div>
-        </div>
-
-        <!-- Business Description & Pricing -->
-        <section class="max-w-4xl mx-auto mb-16 text-left">
-            <div class="p-7 rounded-3xl bg-blue-500/5 border border-blue-500/20">
-                <h2 class="text-2xl font-extrabold text-white mb-3">APS TOOLS Products & Pricing</h2>
-                <p class="text-sm text-slate-400 leading-relaxed mb-6">APS TOOLS is an Android utility application by A28 TECHNOLOGIES. It provides digital utilities for images, documents, finance, calculations, QR tools, converters, productivity and other supported everyday tasks.</p>
-                <div class="grid sm:grid-cols-3 gap-4">
-                    <div class="p-5 rounded-2xl bg-slate-900/70 border border-slate-800"><div class="text-sm font-bold text-white">APS TOOLS Free</div><div class="text-2xl font-extrabold text-white mt-2">₹0</div><div class="text-xs text-slate-500 mt-1">Free utility access</div></div>
-                    <div class="p-5 rounded-2xl bg-slate-900/70 border border-slate-800"><div class="text-sm font-bold text-white">PRO Monthly</div><div class="text-2xl font-extrabold text-white mt-2">₹99</div><div class="text-xs text-slate-500 mt-1">per month</div></div>
-                    <div class="p-5 rounded-2xl bg-slate-900/70 border border-slate-800"><div class="text-sm font-bold text-white">PRO Yearly</div><div class="text-2xl font-extrabold text-white mt-2">₹799</div><div class="text-xs text-slate-500 mt-1">per year</div></div>
-                </div>
-                <p class="text-xs text-slate-500 mt-5">PRO provides an ad-free experience and unlocks PRO tools. Final billing terms and any applicable taxes or offers are shown before payment.</p>
-                <a href="products.html" class="inline-flex mt-5 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold">View Products & Pricing</a>
-            </div>
-        </section>
-
-        <!-- Comprehensive 50 Tools Showcase Grid -->
-        <div id="tools" class="pt-8 text-left">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-extrabold text-white mb-3">All 50+ Tools at Your Fingertips</h2>
-                <p class="text-slate-400 text-sm">Categorized neatly for high performance, zero battery drain, and offline access.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <!-- Category 1 -->
-                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl font-bold">📸</span>
-                        <h3 class="text-lg font-bold text-white">Media & Documents (10)</h3>
-                    </div>
-                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
-                        <li>• <strong>Photo Compressor:</strong> Exact target KB/MB reduction</li>
-                        <li>• <strong>Image Resizer:</strong> Pixel & aspect ratio scaler</li>
-                        <li>• <strong>Image to PDF:</strong> Multi-page clean A4 document creator</li>
-                        <li>• <strong>QR Code Studio:</strong> Offline scanner & generator</li>
-                        <li>• <strong>Color Picker:</strong> Hex & RGB extractor</li>
-                        <li>• <strong>Text to Speech:</strong> Offline audio voice synthesizer</li>
-                        <li>• <strong>Word Counter:</strong> Word, character & reading timer</li>
-                        <li>• <strong>Case Converter:</strong> UPPER, lower, and Title case</li>
-                        <li>• <strong>Password Generator:</strong> High entropy passwords</li>
-                        <li>• <strong>Exif Metadata:</strong> Image hardware details viewer</li>
-                    </ul>
-                </div>
-
-                <!-- Category 2 -->
-                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <span class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-xl font-bold">💰</span>
-                        <h3 class="text-lg font-bold text-white">Finance & Business (10)</h3>
-                    </div>
-                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
-                        <li>• <strong>GST Calculator:</strong> 5%, 12%, 18%, 28% slabs + CGST/SGST</li>
-                        <li>• <strong>Loan / EMI Planner:</strong> Monthly interest & tenure amortizer</li>
-                        <li>• <strong>Cash Note Counter:</strong> 2000 to 10 live currency totalizer</li>
-                        <li>• <strong>SIP & Mutual Fund:</strong> Future wealth & return estimator</li>
-                        <li>• <strong>Discount & Sale:</strong> Instant percentage off calculator</li>
-                        <li>• <strong>Simple & Compound Interest:</strong> Formula comparisons</li>
-                        <li>• <strong>Profit & Loss:</strong> Margin percentage calculator</li>
-                        <li>• <strong>Bill Splitter:</strong> Group dining bill divider & tip tool</li>
-                        <li>• <strong>Fuel Cost Calculator:</strong> Mileage & trip fuel budget</li>
-                        <li>• <strong>Inflation Calculator:</strong> Future rupee purchasing power</li>
-                    </ul>
-                </div>
-
-                <!-- Category 3 -->
-                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <span class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-xl font-bold">⚡</span>
-                        <h3 class="text-lg font-bold text-white">Daily Utilities & Sensors (12)</h3>
-                    </div>
-                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
-                        <li>• <strong>Hardware Compass:</strong> Sensor azimuth direction finder</li>
-                        <li>• <strong>Bubble Level:</strong> Dual-axis horizontal surface leveler</li>
-                        <li>• <strong>Sound Decibel Meter:</strong> Ambient noise level analyzer</li>
-                        <li>• <strong>Exact Age Calculator:</strong> Years, months, days & countdown</li>
-                        <li>• <strong>Date Difference:</strong> Total days between two calendar dates</li>
-                        <li>• <strong>Day of Week Finder:</strong> Historical calendar day locator</li>
-                        <li>• <strong>Digital Tally Counter:</strong> Touch vibration count tracker</li>
-                        <li>• <strong>Stopwatch & Multi-Timer:</strong> Precision lap timer</li>
-                        <li>• <strong>Torch & Screen Light:</strong> Pure white & soft color lamps</li>
-                        <li>• <strong>World Clock:</strong> Multi-country timezone comparator</li>
-                        <li>• <strong>Coin Flipper & Dice:</strong> Randomized quick decision maker</li>
-                        <li>• <strong>Random Picker:</strong> List decision selector</li>
-                    </ul>
-                </div>
-
-                <!-- Category 4 -->
-                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <span class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-xl font-bold">❤️</span>
-                        <h3 class="text-lg font-bold text-white">Health & Fitness (8)</h3>
-                    </div>
-                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
-                        <li>• <strong>BMI Calculator:</strong> Height/weight classification status</li>
-                        <li>• <strong>Calorie & BMR Estimator:</strong> Daily energy baseline requirements</li>
-                        <li>• <strong>Daily Water Tracker:</strong> Body mass hydration requirement</li>
-                        <li>• <strong>Ideal Body Weight:</strong> Devine and Robinson index formulas</li>
-                        <li>• <strong>Body Fat Percentage:</strong> Tape measurement index estimator</li>
-                        <li>• <strong>Breathing Relaxer:</strong> Guided 4-7-8 rhythm animation</li>
-                        <li>• <strong>Sleep Cycle Planner:</strong> 90-minute REM wake cycle optimizer</li>
-                        <li>• <strong>Target Heart Rate:</strong> Aerobic & fat burn zone calculator</li>
-                    </ul>
-                </div>
-
-                <!-- Category 5 -->
-                <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <span class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-xl font-bold">🔬</span>
-                        <h3 class="text-lg font-bold text-white">Science & Converters (10)</h3>
-                    </div>
-                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
-                        <li>• <strong>Unit Converter:</strong> Length, Weight, and Temperature units</li>
-                        <li>• <strong>Area & Land Converter:</strong> Sq Ft, Guntha, Acre, and Hectare</li>
-                        <li>• <strong>Storage Size Converter:</strong> KB, MB, GB, and Terabytes</li>
-                        <li>• <strong>Speed & Pace Converter:</strong> km/h, mph, and min/km metrics</li>
-                        <li>• <strong>Percentage Math Tools:</strong> Value change and ratio calculations</li>
-                        <li>• <strong>CGPA to Percentage:</strong> University conversion standards</li>
-                        <li>• <strong>Roman Numerals:</strong> Standard to Roman numbers</li>
-                        <li>• <strong>Number Base Converter:</strong> Binary, Octal, Decimal, and Hex</li>
-                        <li>• <strong>Morse Code Translator:</strong> Text to audio-visual telegraph dots</li>
-                        <li>• <strong>Prime Number Checker:</strong> Factorization and integer checks</li>
-                    </ul>
-                </div>
-
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="border-t border-slate-900/80 py-8 text-center text-xs text-slate-500 bg-[#060910]">
-        <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p>© 2026 A28 TECHNOLOGIES. All rights reserved.</p>
-            <div class="space-x-6">
-                <a href="products.html" class="hover:text-slate-300 transition">Products & Pricing</a>
-                <a href="delivery-policy.html" class="hover:text-slate-300 transition">Delivery / Shipping</a>
-                <a href="donate.html" class="hover:text-slate-300 transition">Support Development</a>
-                <a href="terms.html" class="hover:text-slate-300 transition">Terms</a>
-                <a href="refund-policy.html" class="hover:text-slate-300 transition">Refund Policy</a>
-                <a href="privacy-policy.html" class="hover:text-slate-300 transition">Privacy Policy</a>
-                <a href="about.html" class="hover:text-slate-300 transition">About Us</a>
-                <a href="contact.html" class="hover:text-slate-300 transition">Contact Us</a>
-                <a href="mailto:akhileshsworks@gmail.com" class="hover:text-slate-300 transition">akhileshsworks@gmail.com</a>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        function toggleMenu() {
-            document.getElementById('mobileMenu').classList.toggle('hidden');
-        }
-    </script>
-</body>
-</html>
-                            
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APS TOOLS - 25+ Smart Utility Tools | A28 TECHNOLOGIES</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>body{font-family:'Plus Jakarta Sans',sans-serif}</style></head>
+<body class="bg-[#070b14] text-slate-100 min-h-screen">
+<header class="border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-50 bg-[#070b14]/90 px-6 py-4">
+<div class="max-w-6xl mx-auto flex justify-between items-center">
+<a href="index.html" class="flex items-center gap-3"><img src="ic_launcher.png" alt="APS TOOLS" class="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-blue-500/30"><span class="text-xl font-extrabold tracking-tight text-white">APS TOOLS</span></a>
+<nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-300"><a href="index.html" class="text-white">Home</a><a href="#tools" class="hover:text-blue-400">25+ Tools</a><a href="donate.html" class="hover:text-blue-400">Support App</a><a href="privacy-policy.html" class="hover:text-blue-400">Privacy</a><a href="about.html" class="hover:text-blue-400">About</a><a href="contact.html" class="hover:text-blue-400">Contact</a></nav>
+<button onclick="toggleMenu()" class="md:hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300" aria-label="Toggle navigation">☰</button></div>
+<div id="mobileMenu" class="hidden md:hidden px-4 pt-4 pb-5 space-y-2 border-t border-slate-800 mt-3"><a href="#tools" onclick="toggleMenu()" class="block px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-900">⚡ 25+ Tools</a><a href="donate.html" class="block px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-900">☕ Support App</a><a href="privacy-policy.html" class="block px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-900">🛡️ Privacy Policy</a><a href="about.html" class="block px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-900">🏢 About Us</a><a href="contact.html" class="block px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-900">✉️ Contact Us</a></div>
+</header>
+<main class="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center">
+<span class="px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 inline-block mb-6">Developed by A28 TECHNOLOGIES • 25+ everyday utility tools</span>
+<h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white mb-6 leading-tight">Simplify Every Task with<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-teal-400">25+ Smart Utility Tools</span></h1>
+<p class="text-slate-400 max-w-2xl mx-auto text-base sm:text-lg mb-10 leading-relaxed">APS TOOLS brings the same Version 1 tool collection to the app and website: Daily Utility, Math &amp; Education, Finance &amp; Business, QR &amp; Scanner, PDF and Image tools.</p>
+<div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16 max-w-md mx-auto">
+<a href="https://github.com/akhileshsavali18-beep/Smarttoolkit/releases/latest/download/APSTool.apk" class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/30 transition text-center">Download APS TOOLS APK</a>
+<a href="donate.html" class="w-full sm:w-auto px-8 py-4 rounded-2xl border border-slate-800 bg-slate-900/70 text-slate-200 font-semibold text-center">Support APS TOOLS</a>
+</div>
+<section id="tools" class="pt-4 text-left"><div class="text-center mb-10"><h2 class="text-3xl font-extrabold text-white mb-3">25+ Tools in Version 1</h2><p class="text-slate-400 text-sm">The app and website show the same six categories. Additional tools remain in the project for future versions.</p></div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"><div class="flex items-center gap-3 mb-4"><span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl">🧰</span><h3 class="text-lg font-bold text-white">Daily Utility <span class="text-xs text-slate-500">(9)</span></h3></div><ul class="space-y-2 text-sm text-slate-300 leading-relaxed"><li>• Age Calculator</li><li>• Unit Converter</li><li>• Digital Tally Counter</li><li>• Day Finder</li><li>• World Clock / Timezone Difference</li><li>• Decision Maker & Choice Picker</li><li>• Event Countdown Timer</li><li>• Leap Year Checker</li><li>• Sleep Cycle Calculator</li></ul></div><div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"><div class="flex items-center gap-3 mb-4"><span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl">🎓</span><h3 class="text-lg font-bold text-white">Math & Education <span class="text-xs text-slate-500">(6)</span></h3></div><ul class="space-y-2 text-sm text-slate-300 leading-relaxed"><li>• Percentage Calculator</li><li>• CGPA to Percentage Calculator</li><li>• Prime Number & Factor Finder</li><li>• Aspect Ratio Calculator</li><li>• Multiplication Table Generator</li><li>• Factorial & Even/Odd Checker</li></ul></div><div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"><div class="flex items-center gap-3 mb-4"><span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl">💰</span><h3 class="text-lg font-bold text-white">Finance & Business <span class="text-xs text-slate-500">(9)</span></h3></div><ul class="space-y-2 text-sm text-slate-300 leading-relaxed"><li>• GST Calculator</li><li>• Loan / EMI Calculator</li><li>• Discount Calculator</li><li>• Bill Splitter & Tip Calculator</li><li>• Profit & Loss Calculator</li><li>• Fuel Cost & Mileage Planner</li><li>• Cash Denomination Counter</li><li>• Inflation & Purchasing Power</li><li>• Simple Tip & Round-Up Calculator</li></ul></div><div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"><div class="flex items-center gap-3 mb-4"><span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl">🔎</span><h3 class="text-lg font-bold text-white">QR & Scanner Tools <span class="text-xs text-slate-500">(1)</span></h3></div><ul class="space-y-2 text-sm text-slate-300 leading-relaxed"><li>• QR Code Generator & Scanner</li></ul></div><div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"><div class="flex items-center gap-3 mb-4"><span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl">📄</span><h3 class="text-lg font-bold text-white">PDF Tools <span class="text-xs text-slate-500">(1)</span></h3></div><ul class="space-y-2 text-sm text-slate-300 leading-relaxed"><li>• Image to PDF Converter</li></ul></div><div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"><div class="flex items-center gap-3 mb-4"><span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-xl">🖼️</span><h3 class="text-lg font-bold text-white">Image Tools <span class="text-xs text-slate-500">(2)</span></h3></div><ul class="space-y-2 text-sm text-slate-300 leading-relaxed"><li>• Photo Compressor</li><li>• Image Resizer</li></ul></div></div></section>
+<section class="mt-12 p-6 sm:p-8 rounded-3xl bg-blue-500/5 border border-blue-500/20 text-center"><h2 class="text-2xl font-extrabold text-white mb-3">Built for everyday use</h2><p class="text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">APS TOOLS is a free utility app by A28 TECHNOLOGIES. Supported processing is designed to work directly on your device where applicable. Ads may be shown in the free app.</p></section>
+</main>
+<footer class="border-t border-slate-900/80 py-8 text-center text-xs text-slate-500 bg-[#060910]"><div class="max-w-6xl mx-auto px-6 flex flex-wrap justify-center gap-x-6 gap-y-3"><a href="privacy-policy.html" class="hover:text-slate-300">Privacy Policy</a><a href="terms.html" class="hover:text-slate-300">Terms</a><a href="about.html" class="hover:text-slate-300">About Us</a><a href="contact.html" class="hover:text-slate-300">Contact Us</a><a href="donate.html" class="hover:text-slate-300">Support App</a><a href="delivery-policy.html" class="hover:text-slate-300">Delivery Information</a></div><p class="mt-4">© 2026 A28 TECHNOLOGIES. All rights reserved.</p></footer>
+<script>function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('hidden')}</script>
+</body></html>
