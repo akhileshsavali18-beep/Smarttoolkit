@@ -1,0 +1,85 @@
+const config = {
+  appRoot: process.env.GITHUB_WORKSPACE || process.cwd(),
+  devices: ["pixel-10-pro"],
+  locales: ["en-US"],
+  appearance: "light",
+  android: {
+    appPath: process.env.APS_APK || "/tmp/APSTool.apk",
+    applicationId: "com.aistudio.smarttoolkit.tyvz",
+  },
+  theme: {
+    background: "linear-gradient(160deg, #EAF3FF 0%, #F7FAFF 55%, #FFFFFF 100%)",
+    headlineColor: "#0B1F33",
+    subheadColor: "#526579",
+    fontFamily: "DM Sans, sans-serif",
+    copyHeightRatio: 0.24,
+    deviceWidthRatio: 0.84,
+    layout: "hero",
+  },
+  store: {
+    name: "APS TOOLS",
+    subtitle: { "en-US": "Smart utility tools in one app" },
+    developer: "A28 TECHNOLOGIES",
+    category: "Tools",
+    rating: 4.8,
+    ratingCount: "V1",
+    ageRating: "3+",
+    price: "Free",
+    description: {
+      "en-US": "Essential everyday, math, finance, QR, PDF and image tools in one simple app.",
+    },
+  },
+  scenes: [
+    {
+      kind: "screenshot",
+      id: "home",
+      flow: "store-01-home",
+      headline: { "en-US": "Essential Tools. One Simple App." },
+      subhead: { "en-US": "Useful tools for everyday tasks, all in one place." },
+    },
+    {
+      kind: "screenshot",
+      id: "daily",
+      flow: "store-02-daily",
+      headline: { "en-US": "Everyday Tools, Made Simple" },
+      subhead: { "en-US": "Quick utilities for common daily tasks." },
+    },
+    {
+      kind: "screenshot",
+      id: "math",
+      flow: "store-03-math",
+      headline: { "en-US": "Calculate Faster. Learn Smarter." },
+      subhead: { "en-US": "Practical math and education tools at your fingertips." },
+    },
+    {
+      kind: "screenshot",
+      id: "finance",
+      flow: "store-04-finance",
+      headline: { "en-US": "Smart Finance & Business Tools" },
+      subhead: { "en-US": "Make everyday calculations easier and faster." },
+    },
+    {
+      kind: "screenshot",
+      id: "qr",
+      flow: "store-05-qr",
+      headline: { "en-US": "Scan & Generate QR Codes" },
+      subhead: { "en-US": "Create and scan QR codes with ease." },
+    },
+    {
+      kind: "screenshot",
+      id: "pdf",
+      flow: "store-06-pdf",
+      headline: { "en-US": "Work With PDFs Easily" },
+      subhead: { "en-US": "Useful PDF tools for everyday document tasks." },
+    },
+    {
+      kind: "screenshot",
+      id: "image",
+      flow: "store-07-image",
+      headline: { "en-US": "Simple Image Tools" },
+      subhead: { "en-US": "Resize, compress and manage images quickly." },
+    },
+  ],
+};
+
+export default config;

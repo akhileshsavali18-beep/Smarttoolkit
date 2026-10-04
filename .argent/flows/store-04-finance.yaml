@@ -1,0 +1,7 @@
+steps:
+  - launch: com.aistudio.smarttoolkit.tyvz
+  - await: { visible: { text: Categories } }
+  - tap: { text: Categories }
+  - await: { visible: { text: Finance & Business } }
+  - tap: { text: Finance & Business }
+  - await: { idle: true }

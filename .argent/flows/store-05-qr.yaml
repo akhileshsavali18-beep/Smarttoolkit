@@ -1,0 +1,7 @@
+steps:
+  - launch: com.aistudio.smarttoolkit.tyvz
+  - await: { visible: { text: Categories } }
+  - tap: { text: Categories }
+  - await: { visible: { text: QR & Scanner Tools } }
+  - tap: { text: QR & Scanner Tools }
+  - await: { idle: true }

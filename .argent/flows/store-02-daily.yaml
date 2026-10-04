@@ -1,0 +1,7 @@
+steps:
+  - launch: com.aistudio.smarttoolkit.tyvz
+  - await: { visible: { text: Categories } }
+  - tap: { text: Categories }
+  - await: { visible: { text: Daily Utilities } }
+  - tap: { text: Daily Utilities }
+  - await: { idle: true }

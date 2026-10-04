@@ -1,0 +1,4 @@
+steps:
+  - launch: com.aistudio.smarttoolkit.tyvz
+  - await: { visible: { text: Home } }
+  - await: { idle: true }

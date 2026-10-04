@@ -1,0 +1,82 @@
+name: APS TOOLS - Store Screenshots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".argent/flows/**"
+      - "goldie.config.ts"
+      - ".github/workflows/capture-store-screenshots.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools emulator platforms;android-35 system-images;android-35;google_apis;x86_64"
+
+      - name: Install ffmpeg and Linux emulator dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libpulse0 libnss3 libxcomposite1 libxcursor1 libxi6 libxrandr2 libxtst6 libxdamage1 libxkbcommon0 libasound2t64
+
+      - name: Download latest APS TOOLS release APK
+        run: |
+          curl -L --fail --retry 3 \
+            "https://github.com/akhileshsavali18-beep/Smarttoolkit/releases/latest/download/APSTool.apk" \
+            -o "$RUNNER_TEMP/APSTool.apk"
+          test -s "$RUNNER_TEMP/APSTool.apk"
+          echo "APS_APK=$RUNNER_TEMP/APSTool.apk" >> "$GITHUB_ENV"
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      - name: Get Goldie
+        run: |
+          git clone --depth 1 https://github.com/software-mansion-labs/goldie.git "$RUNNER_TEMP/goldie"
+          cd "$RUNNER_TEMP/goldie"
+          bun install --frozen-lockfile
+
+      - name: Run Goldie on Pixel 9 Pro emulator
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: "Pixel 9 Pro"
+          ram-size: 4G
+          disk-size: 10G
+          force-avd-creation: true
+          emulator-options: "-no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none"
+          disable-animations: true
+          script: |
+            export ANDROID_HOME="$ANDROID_HOME"
+            export ANDROID_SDK_ROOT="$ANDROID_HOME"
+            export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+            cd "$GITHUB_WORKSPACE"
+            "$HOME/.bun/bin/bun" "$RUNNER_TEMP/goldie/src/cli.ts" doctor --config "$GITHUB_WORKSPACE/goldie.config.ts"
+            "$HOME/.bun/bin/bun" "$RUNNER_TEMP/goldie/src/cli.ts" all --config "$GITHUB_WORKSPACE/goldie.config.ts" --device pixel-10-pro
+
+      - name: Upload Goldie screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: APS-TOOLS-Indus-Store-Screenshots
+          path: out/screenshots/pixel-10-pro/en-US/*.png
+          if-no-files-found: error
+          retention-days: 14
