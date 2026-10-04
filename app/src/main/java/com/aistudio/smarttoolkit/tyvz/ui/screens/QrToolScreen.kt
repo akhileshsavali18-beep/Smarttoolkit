@@ -614,3 +614,196 @@ fun QrToolScreen(
         }
     }
 }
+
+
+@Composable
+private fun CameraQrScanner(
+    onDetected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasCameraPermission = granted
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasCameraPermission) {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    if (!hasCameraPermission) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.QrCodeScanner,
+                    contentDescription = null,
+                    tint = QrIndigo,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Camera permission is needed to scan QR codes.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Allow Camera")
+                }
+            }
+        }
+        return
+    }
+
+    val previewView = remember(context) {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner, hasCameraPermission) {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        val executor = ContextCompat.getMainExecutor(context)
+
+        val listener = Runnable {
+            try {
+                val cameraProvider = cameraProviderFuture.get()
+                val preview = Preview.Builder().build().also {
+                    it.surfaceProvider = previewView.surfaceProvider
+                }
+
+                val analysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                    .build()
+
+                analysis.setAnalyzer(executor, QrFrameAnalyzer(onDetected))
+
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    preview,
+                    analysis
+                )
+            } catch (_: Exception) {
+                // Gallery scanning remains available if the camera cannot start.
+            }
+        }
+
+        cameraProviderFuture.addListener(listener, executor)
+
+        onDispose {
+            try {
+                cameraProviderFuture.get().unbindAll()
+            } catch (_: Exception) {
+                // Ignore camera cleanup failures.
+            }
+        }
+    }
+
+    AndroidView(
+        factory = { previewView },
+        modifier = modifier
+    )
+}
+
+private class QrFrameAnalyzer(
+    private val onDetected: (String) -> Unit
+) : ImageAnalysis.Analyzer {
+
+    private val processing = AtomicBoolean(false)
+    private var lastDetected: String? = null
+
+    override fun analyze(image: ImageProxy) {
+        if (!processing.compareAndSet(false, true)) {
+            image.close()
+            return
+        }
+
+        try {
+            val plane = image.planes.firstOrNull() ?: return
+            val buffer = plane.buffer
+            val bytes = ByteArray(buffer.remaining())
+            buffer.get(bytes)
+
+            val width = image.width
+            val height = image.height
+            val rowStride = plane.rowStride
+            val pixelStride = plane.pixelStride
+            val pixels = IntArray(width * height)
+
+            for (y in 0 until height) {
+                val rowStart = y * rowStride
+                for (x in 0 until width) {
+                    val offset = rowStart + x * pixelStride
+                    if (offset + 3 < bytes.size) {
+                        val r = bytes[offset].toInt() and 0xFF
+                        val g = bytes[offset + 1].toInt() and 0xFF
+                        val b = bytes[offset + 2].toInt() and 0xFF
+                        val a = bytes[offset + 3].toInt() and 0xFF
+                        pixels[y * width + x] =
+                            (a shl 24) or (r shl 16) or (g shl 8) or b
+                    }
+                }
+            }
+
+            var bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+
+            val rotation = image.imageInfo.rotationDegrees
+            if (rotation != 0) {
+                val matrix = Matrix().apply {
+                    postRotate(rotation.toFloat())
+                }
+                bitmap = Bitmap.createBitmap(
+                    bitmap,
+                    0,
+                    0,
+                    bitmap.width,
+                    bitmap.height,
+                    matrix,
+                    true
+                )
+            }
+
+            val decoded = QrUtils.decodeQrBitmap(bitmap)
+            if (!decoded.isNullOrBlank() && decoded != lastDetected) {
+                lastDetected = decoded
+                onDetected(decoded)
+            }
+        } catch (_: Exception) {
+            // Ignore individual camera frames and continue scanning.
+        } finally {
+            image.close()
+            processing.set(false)
+        }
+    }
+}
