@@ -59,7 +59,7 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
-          profile: "Pixel 9 Pro"
+          profile: "Pixel 2"
           ram-size: 4G
           disk-size: 10G
           force-avd-creation: true

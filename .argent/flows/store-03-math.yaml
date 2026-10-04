@@ -1,7 +1,0 @@
-steps:
-  - launch: com.aistudio.smarttoolkit.tyvz
-  - await: { visible: { text: Categories } }
-  - tap: { text: Categories }
-  - await: { visible: { text: Math & Education } }
-  - tap: { text: Math & Education }
-  - await: { idle: true }

@@ -1,5 +1,7 @@
 const config = {
   appRoot: process.env.GITHUB_WORKSPACE || process.cwd(),
+  appPath: process.env.APS_APK || "/tmp/APSTool.apk",
+  bundleId: "com.aistudio.smarttoolkit.tyvz",
   devices: ["pixel-10-pro"],
   locales: ["en-US"],
   appearance: "light",
