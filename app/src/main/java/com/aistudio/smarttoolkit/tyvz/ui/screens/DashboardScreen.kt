@@ -6,8 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import com.aistudio.smarttoolkit.tyvz.ads.AdManager
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import com.aistudio.smarttoolkit.tyvz.ads.ConsentManager
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -63,7 +61,6 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.GraphicEq
@@ -158,7 +155,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.smarttoolkit.tyvz.R
 import com.aistudio.smarttoolkit.tyvz.ads.StickyBannerAd
-import com.aistudio.smarttoolkit.tyvz.BuildConfig
 import com.aistudio.smarttoolkit.tyvz.billing.BillingManager
 import com.aistudio.smarttoolkit.tyvz.model.AppPreferencesManager
 import com.aistudio.smarttoolkit.tyvz.model.AppScreen
@@ -279,6 +275,9 @@ private val V1_VISIBLE_CATEGORIES = setOf(
     ToolCategory.IMAGE_TOOLS
 )
 
+// V1 hides Decision Maker / Choice Maker without deleting its implementation.
+private val V1_HIDDEN_SCREENS = setOf(AppScreen.DECISION_MAKER)
+
 data class ToolDefinition(
     val screen: AppScreen,
     val title: String,
@@ -323,10 +322,6 @@ fun DashboardScreen(
     val favouritesListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     val profileListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
     var selectedCategoryFilter by rememberSaveable { mutableStateOf(ToolCategory.ALL) }
-    var showFeedbackDialog by remember { mutableStateOf(false) }
-    var feedbackSubmitting by remember { mutableStateOf(false) }
-    var feedbackSubmitted by remember { mutableStateOf(false) }
-    var feedbackAttempt by remember { mutableStateOf(0) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showCoffeeDialog by remember { mutableStateOf(false) }
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
@@ -887,7 +882,7 @@ fun DashboardScreen(
     // Version 1 keeps all tool implementations in the source but exposes only the selected six categories.
     // Future categories remain compiled and can be re-enabled by changing this visibility set.
     val visibleTools = remember(allTools) {
-        allTools.filter { it.category in V1_VISIBLE_CATEGORIES }
+        allTools.filter { it.category in V1_VISIBLE_CATEGORIES && it.screen !in V1_HIDDEN_SCREENS }
     }
 
     // Tool of the Day (dynamically rotates daily)
@@ -919,184 +914,6 @@ fun DashboardScreen(
             )
         }
         context.startActivity(Intent.createChooser(shareIntent, "Refer APS TOOLS"))
-    }
-
-    if (showFeedbackDialog) {
-        InAppFeedbackDialog(
-            isSubmitting = feedbackSubmitting,
-            isSubmitted = feedbackSubmitted,
-            onDismiss = {
-                if (!feedbackSubmitting) {
-                    showFeedbackDialog = false
-                    feedbackSubmitted = false
-                }
-            },
-            onSubmit = { rating, comment ->
-                val cleanComment = comment.trim()
-                if (cleanComment.isBlank()) {
-                    Toast.makeText(context, "Please enter your feedback.", Toast.LENGTH_SHORT).show()
-                } else {
-                    feedbackSubmitting = true
-                    feedbackSubmitted = false
-                    feedbackAttempt += 1
-                    val currentAttempt = feedbackAttempt
-
-                    val feedback = hashMapOf<String, Any>(
-                        "rating" to rating,
-                        "comment" to cleanComment,
-                        "appVersion" to BuildConfig.VERSION_NAME,
-                        "createdAt" to FieldValue.serverTimestamp()
-                    )
-
-                    FirebaseFirestore.getInstance()
-                        .collection("feedback")
-                        .add(feedback)
-                        .addOnSuccessListener {
-                            if (feedbackAttempt == currentAttempt) {
-                                feedbackSubmitting = false
-                                feedbackSubmitted = true
-                                HapticUtils.performSuccess(context)
-                                Toast.makeText(
-                                    context,
-                                    "Feedback submitted successfully!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                        .addOnFailureListener {
-                            if (feedbackAttempt == currentAttempt) {
-                                feedbackSubmitting = false
-                                Toast.makeText(
-                                    context,
-                                    "Couldn't submit feedback. Please try again.",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-
-                    updateScope.launch {
-                        delay(15000)
-                        if (feedbackSubmitting && feedbackAttempt == currentAttempt) {
-                            feedbackSubmitting = false
-                            Toast.makeText(
-                                context,
-                                "Feedback submission timed out. Check your internet and try again.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                }
-            }
-        )
-    }
-
-    if (showPrivacyDialog) {
-        AlertDialog(
-            onDismissRequest = { showPrivacyDialog = false },
-            title = { Text("Privacy Policy", fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    text = "APS TOOLS operates 100% offline on your device.\n\n" +
-                            "• No personal data, photos, documents, or calculations are ever uploaded to any cloud server.\n" +
-                            "• Camera and storage access are used exclusively on-device for QR scanning and saving your converted files to gallery.\n" +
-                            "• All features remain fast, private, and secure.",
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showPrivacyDialog = false }) {
-                    Text("Close", fontWeight = FontWeight.Bold)
-                }
-            }
-        )
-    }
-
-    if (showCoffeeDialog) {
-        AlertDialog(
-            onDismissRequest = { showCoffeeDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocalCafe, contentDescription = null, tint = Color(0xFFD97706))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Support APS Tools ☕", fontWeight = FontWeight.Bold)
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "Help us keep APS TOOLS free and improving.\n\nChoose your preferred support amount on the official support page: ₹10, ₹50, ₹100 or a custom amount.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Option A: Watch Rewarded Ad
-                    Button(
-                        onClick = {
-                            showCoffeeDialog = false
-                            val activity = context as? Activity
-                            if (activity != null) {
-                                if (AdManager.isRewardedAdReady()) {
-                                    AdManager.showRewardedAd(
-                                        activity = activity,
-                                        onUserEarnedReward = { amount, type ->
-                                            Toast.makeText(context, "Thank you! Rewarded $amount $type for supporting developer.", Toast.LENGTH_LONG).show()
-                                        },
-                                        onAdDismissed = {
-                                            AdManager.loadRewardedAd(activity)
-                                        },
-                                        onAdFailed = { err ->
-                                            Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
-                                } else {
-                                    Toast.makeText(context, "Rewarded video ad is loading. Please try again in 3 seconds!", Toast.LENGTH_SHORT).show()
-                                    AdManager.loadRewardedAd(activity)
-                                }
-                            } else {
-                                Toast.makeText(context, "Thank you for supporting APS TOOLS!", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.WorkspacePremium, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Watch Short Video Ad", fontWeight = FontWeight.Bold)
-                    }
-
-                    // Option B: Official Website Link
-                    Button(
-                        onClick = {
-                            showCoffeeDialog = false
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://akhileshsavali18-beep.github.io/Smarttoolkit/donate.html"))
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Unable to open official website", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Text("Open Support APS Tools", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("Choose ₹10, ₹50, ₹100 or a custom amount on the support page", fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showCoffeeDialog = false }) {
-                    Text("Close")
-                }
-            }
-        )
     }
 
     if (updateInfo != null) {
@@ -1331,10 +1148,6 @@ fun DashboardScreen(
                     onBuyCoffee = {
                         HapticUtils.performClick(context)
                         showCoffeeDialog = true
-                    },
-                    onFeedback = {
-                        HapticUtils.performClick(context)
-                        showFeedbackDialog = true
                     },
                     onCheckForUpdate = {
                         HapticUtils.performClick(context)
@@ -1812,7 +1625,6 @@ private fun ProfileTabContent(
     onShareApp: () -> Unit,
     onPrivacyPolicy: () -> Unit,
     onBuyCoffee: () -> Unit,
-    onFeedback: () -> Unit,
     onCheckForUpdate: () -> Unit
 ) {
     LazyColumn(
@@ -1941,15 +1753,6 @@ private fun ProfileTabContent(
                         title = "Refer & Download",
                         subtitle = "Share APS TOOLS with friends and download the app",
                         onClick = onShareApp
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    SettingsActionRow(
-                        icon = Icons.Default.Feedback,
-                        title = "Send Feedback",
-                        subtitle = "Rate APS TOOLS and send feedback directly",
-                        onClick = onFeedback
                     )
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
