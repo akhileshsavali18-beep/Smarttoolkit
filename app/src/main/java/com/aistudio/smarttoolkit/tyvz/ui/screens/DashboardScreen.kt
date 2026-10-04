@@ -3,7 +3,6 @@ package com.aistudio.smarttoolkit.tyvz.ui.screens
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import com.aistudio.smarttoolkit.tyvz.ads.AdManager
 import com.google.firebase.firestore.FieldValue
@@ -164,7 +163,6 @@ import com.aistudio.smarttoolkit.tyvz.model.AppPreferencesManager
 import com.aistudio.smarttoolkit.tyvz.model.AppScreen
 import com.aistudio.smarttoolkit.tyvz.model.ThemeMode
 import com.aistudio.smarttoolkit.tyvz.model.ToolCategory
-import com.aistudio.smarttoolkit.tyvz.ui.components.ProUpgradeDialog
 import com.aistudio.smarttoolkit.tyvz.update.UpdateInfo
 import com.aistudio.smarttoolkit.tyvz.update.UpdateManager
 import com.aistudio.smarttoolkit.tyvz.ui.theme.AgeOrange
