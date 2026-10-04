@@ -886,6 +886,7 @@ fun DashboardScreen(
     }
 
     // Version 1 keeps all tool implementations in the source but exposes only the selected six categories.
+    // Future categories remain compiled and can be re-enabled by changing this visibility set.
     val visibleTools = remember(allTools) {
         allTools.filter { it.category in V1_VISIBLE_CATEGORIES }
     }
