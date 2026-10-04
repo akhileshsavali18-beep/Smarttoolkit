@@ -3,6 +3,7 @@ package com.aistudio.smarttoolkit.tyvz.ui.screens
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import com.aistudio.smarttoolkit.tyvz.ads.AdManager
 import com.google.firebase.firestore.FieldValue
