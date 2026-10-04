@@ -76,7 +76,7 @@ jobs:
             echo "Pending release $CURRENT_NAME detected. Reusing it; no second bump."
           else
             IFS='.' read -r -a PARTS <<< "$CURRENT_NAME"
-            LAST_INDEX=$(${#PARTS[@]} - 1)
+            LAST_INDEX=$(( ${#PARTS[@]} - 1 ))
             PARTS[$LAST_INDEX]=$((PARTS[$LAST_INDEX] + 1))
             NEW_NAME=$(IFS=.; echo "${PARTS[*]}")
             NEW_CODE=$((CURRENT_CODE + 1))
