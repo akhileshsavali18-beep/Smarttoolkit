@@ -93,11 +93,9 @@ fun ApsToolsApp(modifier: Modifier = Modifier) {
             } catch (e: Throwable) {
                 // Background analytics init
             }
-            try {
-                billingManager.startConnection()
-            } catch (e: Throwable) {
-                // Background billing setup
-            }
+            // PRO/subscription billing is intentionally dormant in Version 1.
+            // BillingManager source remains in the repository for a future version.
+
         }
     }
 
