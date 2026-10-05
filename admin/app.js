@@ -190,7 +190,7 @@
   async function loadDashboard() {
     setStatus("Loading analytics…");
     const [from, to] = state.range === "custom"
-      ? [new Date($("fromDate").value + "T00:00:00"), new Date($("toDate").value + "T00:00:00")]
+      ? [new Date($("fromDate").value + "T00:00:00"), new Date(new Date($("toDate").value + "T00:00:00").getTime() + 86400000)]
       : rangeBounds(state.range);
 
     const [users, events] = await Promise.all([
