@@ -90,6 +90,7 @@ fun ApsToolsApp(modifier: Modifier = Modifier) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 AppAnalytics.initialize(context.applicationContext)
+                AppAnalytics.logAppOpened(context.applicationContext)
             } catch (e: Throwable) {
                 // Background analytics init
             }
