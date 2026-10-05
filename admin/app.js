@@ -90,11 +90,11 @@
     return Object.fromEntries(Object.entries(doc?.fields || {}).map(([k, v]) => [k, firestoreValue(v)]));
   }
 
-  async function runQuery(collectionId, from, to) {
+  async function runQuery(collectionId, from, to, orderField = "timestamp") {
     if (!state.idToken) throw new Error("Session expired");
     const structuredQuery = {
       from: [{ collectionId }],
-      orderBy: [{ field: { fieldPath: "timestamp" }, direction: "DESCENDING" }],
+      orderBy: [{ field: { fieldPath: orderField }, direction: "DESCENDING" }],
       limit: 500
     };
 
@@ -194,11 +194,11 @@
       : rangeBounds(state.range);
 
     const [users, events] = await Promise.all([
-      runQuery("users", null, null).catch(() => []),
+      runQuery("analytics_users", null, null, "last_seen").catch(() => []),
       runQuery("analytics_events", from, to).catch(() => [])
     ]);
 
-    const newUsers = users.filter(u => u.createdAt instanceof Date && u.createdAt >= from && u.createdAt < to).length;
+    const newUsers = users.filter(u => u.created_at instanceof Date && u.created_at >= from && u.created_at < to).length;
     const activeIds = new Set(
       events.filter(e => ["app_open", "app_opens", "app_opened"].includes(e.event_name)).map(e => e.user_id || e.uid).filter(Boolean)
     );
