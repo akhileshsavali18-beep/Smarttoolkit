@@ -1,1 +1,85 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>APS TOOLS Admin</title><link rel="stylesheet" href="styles.css"></head><body><header><b>APS TOOLS <span>Admin Panel</span></b><button>Sign out</button></header><main><div class="top"><div><h1>Dashboard</h1><small>Today</small></div><div class="filters"><button>Today</button><button>Yesterday</button><button>7 Days</button><button>30 Days</button><button>This Month</button><button>Custom</button></div></div><section class="cards"><div><small>Total Users</small><b>—</b></div><div><small>Active Users</small><b>—</b></div><div><small>New Users</small><b>—</b></div><div><small>Tool Uses</small><b>—</b></div><div><small>App Opens</small><b>—</b></div><div><small>Most Used Tool</small><b>—</b></div></section><section class="grid"><article><h2>Tool Analytics</h2><p>No analytics data connected yet.</p></article><article><h2>Category Analytics</h2><p>No analytics data connected yet.</p></article><article><h2>Recent Activity</h2><p>No activity data yet.</p></article><article><h2>App Health</h2><p>Errors / Crashes —</p><p>Current Version <b>2.7</b></p><p>Analytics Firebase</p></article></section></main><nav><a class="on">⌂<small>Dashboard</small></a><a>♙<small>Users</small></a><a>◈<small>Analytics</small></a><a>◉<small>Ads</small></a><a>☰<small>More</small></a></nav></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>APS TOOLS Admin</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <b>APS TOOLS <span>Admin Panel</span></b>
+    <div class="header-right">
+      <small id="adminEmail"></small>
+      <button id="signOutBtn" hidden>Sign out</button>
+    </div>
+  </header>
+
+  <section id="loginView" class="login-view">
+    <div class="login-card">
+      <div class="brand-mark">APS</div>
+      <h1>Admin Login</h1>
+      <p>Authorized APS TOOLS administrators only.</p>
+      <form id="loginForm">
+        <label>Email<input id="email" type="email" autocomplete="username" required></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+        <button id="loginBtn" class="primary" type="submit">Sign in</button>
+      </form>
+      <div id="status" class="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <main id="dashboardView" hidden>
+    <div class="top">
+      <div><h1>Dashboard</h1><small id="rangeLabel">Today</small></div>
+      <div class="filters">
+        <button data-range="today" class="selected">Today</button>
+        <button data-range="yesterday">Yesterday</button>
+        <button data-range="7d">7 Days</button>
+        <button data-range="30d">30 Days</button>
+        <button data-range="month">This Month</button>
+        <button data-range="custom">Custom</button>
+      </div>
+    </div>
+
+    <div id="customRange" class="custom-range" hidden>
+      <label>From <input id="fromDate" type="date"></label>
+      <label>To <input id="toDate" type="date"></label>
+      <button id="applyCustom" class="primary">Apply</button>
+    </div>
+
+    <section class="cards">
+      <div><small>Total Users</small><b id="totalUsers">—</b></div>
+      <div><small>Active Users</small><b id="activeUsers">—</b></div>
+      <div><small>New Users</small><b id="newUsers">—</b></div>
+      <div><small>Tool Uses</small><b id="toolUses">—</b></div>
+      <div><small>App Opens</small><b id="appOpens">—</b></div>
+      <div><small>Most Used Tool</small><b id="mostUsedTool">—</b></div>
+    </section>
+
+    <section class="grid">
+      <article><h2>Tool Analytics</h2><div id="toolAnalytics"><p>No tool analytics data yet.</p></div></article>
+      <article><h2>Category Analytics</h2><div id="categoryAnalytics"><p>No category analytics data yet.</p></div></article>
+      <article><h2>Recent Activity</h2><div id="recentActivity"><p>No activity data yet.</p></div></article>
+      <article>
+        <h2>App Health</h2>
+        <p>Errors / Crashes —</p>
+        <p>Current Version <b>2.7</b></p>
+        <p>Analytics <b>Firebase</b></p>
+      </article>
+    </section>
+
+    <div id="status" class="status" aria-live="polite"></div>
+  </main>
+
+  <nav>
+    <a class="on" data-tab="Dashboard">⌂<small>Dashboard</small></a>
+    <a data-tab="Users">♙<small>Users</small></a>
+    <a data-tab="Analytics">◈<small>Analytics</small></a>
+    <a data-tab="Ads">◉<small>Ads</small></a>
+    <a data-tab="More">☰<small>More</small></a>
+  </nav>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
