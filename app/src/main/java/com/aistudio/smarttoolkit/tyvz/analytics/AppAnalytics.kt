@@ -21,6 +21,7 @@ object AppAnalytics {
     private const val TAG = "AppAnalytics"
     private const val PREFS = "aps_tools_analytics"
     private const val INSTALL_ID = "installation_id"
+    private const val FIRST_LAUNCH = "first_launch_recorded"
 
     private var firebaseAnalytics: FirebaseAnalytics? = null
     private var firestore: FirebaseFirestore? = null
@@ -121,6 +122,8 @@ object AppAnalytics {
     private fun upsertInstallation(context: Context) {
         val db = firestore ?: return
         val id = installationId ?: return
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val isFirstLaunch = !prefs.getBoolean(FIRST_LAUNCH, false)
         val androidId = try {
             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
         } catch (_: Throwable) {
@@ -138,6 +141,10 @@ object AppAnalytics {
         )
         if (!androidId.isNullOrBlank()) {
             data["android_id_hash"] = androidId.hashCode().toString(16)
+        }
+        if (isFirstLaunch) {
+            data["created_at"] = FieldValue.serverTimestamp()
+            prefs.edit().putBoolean(FIRST_LAUNCH, true).apply()
         }
 
         db.collection("analytics_users").document(id).set(data, SetOptions.merge())
