@@ -1,96 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - APS TOOLS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    </style>
-</head>
-<body class="bg-[#070b14] text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-
-    <!-- Header Navigation with App Logo -->
-    <header class="border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-50 bg-[#070b14]/90 px-6 py-4">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="flex items-center space-x-3 group">
-                <img src="ic_launcher.png" alt="APS TOOLS" class="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform" onerror="this.src='https://via.placeholder.com/40/2563eb/ffffff?text=APS'" />
-                <span class="text-xl font-extrabold tracking-tight text-white block leading-none">APS TOOLS</span>
-            </a>
-
-            <nav class="hidden md:flex items-center space-x-6 text-sm font-semibold text-slate-300">
-                <a href="index.html" class="hover:text-blue-400 transition">Home</a>
-                <a href="donate.html" class="hover:text-blue-400 transition">☕ Support</a>
-                <a href="privacy-policy.html" class="text-blue-400 font-bold transition">Privacy Policy</a>
-                <a href="mailto:akhileshsworks@gmail.com" class="hover:text-blue-400 transition">Contact</a>
-            </nav>
-
-            <button onclick="toggleMenu()" class="md:hidden p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 focus:outline-none" aria-label="Toggle navigation">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-        </div>
-
-        <div id="mobileMenu" class="hidden md:hidden px-4 pt-4 pb-6 space-y-3 border-t border-slate-800/80 mt-3 bg-[#070b14]">
-            <a href="index.html" class="block px-3 py-2 rounded-xl text-base font-medium text-slate-300 hover:bg-slate-900">🏠 Home</a>
-            <a href="donate.html" class="block px-3 py-2 rounded-xl text-base font-medium text-amber-400 hover:bg-slate-900">☕ Support Developer</a>
-            <a href="privacy-policy.html" class="block px-3 py-2 rounded-xl text-base font-medium text-white bg-slate-900/80">🛡️ Privacy Policy</a>
-            <a href="mailto:akhileshsworks@gmail.com" class="block px-3 py-2 rounded-xl text-base font-medium text-blue-400 hover:bg-slate-900">✉️ Contact</a>
-        </div>
-    </header>
-
-    <!-- Privacy Content -->
-    <main class="max-w-4xl mx-auto px-6 py-12 flex-1">
-        <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl">
-            <span class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 inline-block mb-4">
-                Privacy & Data Protection
-            </span>
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-2">Privacy Policy for APS TOOLS</h1>
-            <p class="text-xs text-slate-500 mb-8">Effective Date: September 2026 • Maintained by A28 TECHNOLOGIES</p>
-
-            <div class="space-y-6 text-sm text-slate-300 leading-relaxed">
-                <section>
-                    <h2 class="text-lg font-bold text-white mb-2">1. Offline First & Zero Remote Storage</h2>
-                    <p>APS TOOLS is designed as an offline-first application. Supported image, document and calculation processing is performed directly on your Android device. We do not use our servers to store or view your personal photos or documents. Some online services, such as advertising, feedback submission and other limited online services, may communicate limited information as described below.</p>
-                </section>
-
-                <section>
-                    <h2 class="text-lg font-bold text-white mb-2">2. Device Permissions</h2>
-                    <p>The app requests limited Android device permissions solely to deliver features you invoke:</p>
-                    <ul class="list-disc pl-5 mt-2 space-y-1 text-slate-400">
-                        <li><strong>Storage / Media:</strong> Required solely to pick images from your gallery for compression/PDF creation and save output results to your local device.</li>
-                        <li><strong>Sensors (Accelerometer / Magnetometer):</strong> Used locally in real time for the Compass and Bubble Level tools. No sensor data is ever recorded.</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2 class="text-lg font-bold text-white mb-2">3. Advertising & Analytics</h2>
-                    <p>The application integrates standard Google AdMob SDKs to display rewarded and contextual advertisements, keeping the 50+ tools free. Google may collect anonymized advertising identifiers in accordance with the standard Google Play Services privacy framework.</p>
-                </section>
-
-                <section>\n                    <h2 class="text-lg font-bold text-white mb-2">4. Feedback & Support Data</h2>
-                    <p>If you submit in-app feedback, the app may send the rating, comment, app version and submission timestamp to our Firebase/Firestore service so that we can review and respond to product feedback. We do not request payment credentials in feedback.</p>
-                </section>
-                <section>\n                    <h2 class="text-lg font-bold text-white mb-2">5. Contacting Developer</h2>
-                    <p>For privacy queries, security audits, or support requests, write directly to:</p>
-                    <p class="mt-2 text-blue-400 font-semibold font-mono">akhileshsworks@gmail.com</p>
-                </section>
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <div class="max-w-4xl mx-auto px-6 pb-8 text-center text-xs text-slate-500"><a href="delivery-policy.html" class="mx-2">Delivery/Shipping</a><a href="refund-policy.html" class="mx-2">Refund & Cancellation</a><a href="privacy-policy.html" class="mx-2">Privacy</a><a href="terms.html" class="mx-2">Terms</a><a href="contact.html" class="mx-2">Contact</a></div><footer class="border-t border-slate-900/80 py-8 text-center text-xs text-slate-500 bg-[#060910]">
-        <p>© 2026 A28 TECHNOLOGIES. All rights reserved.</p>
-    </footer>
-
-    <script>
-        function toggleMenu() {
-            document.getElementById('mobileMenu').classList.toggle('hidden');
-        }
-    </script>
-</body>
-</html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Privacy Policy - APS TOOLS | A28 TECHNOLOGIES</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>body{font-family:'Plus Jakarta Sans',sans-serif}</style></head>
+<body class="bg-[#070b14] text-slate-100 min-h-screen"><header class="border-b border-slate-800 bg-[#070b14]/95 px-6 py-4"><div class="max-w-6xl mx-auto flex justify-between items-center"><a href="index.html" class="flex items-center gap-3"><img src="ic_launcher.png" class="w-10 h-10 rounded-xl" alt="APS TOOLS"><span class="font-extrabold text-white text-xl">APS TOOLS</span></a><a href="index.html" class="text-blue-400 text-sm font-semibold">Home</a></div></header>
+<main class="max-w-4xl mx-auto px-6 py-12"><div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 sm:p-10"><h1 class="text-3xl font-extrabold text-white mb-2">Privacy Policy</h1><p class="text-xs text-slate-500 mb-8">Effective Date: October 2026 • A28 TECHNOLOGIES</p><div class="space-y-6 text-sm text-slate-300 leading-relaxed">
+<section><h2 class="text-lg font-bold text-white mb-2">1. Information and Local Processing</h2><p>APS TOOLS is designed to process supported calculations, images and documents locally on your Android device. We do not use our own servers to store or view your personal photos or documents.</p></section>
+<section><h2 class="text-lg font-bold text-white mb-2">2. Permissions</h2><p>Permissions are requested only when required for a feature, such as selecting media or using camera-based QR scanning. Data required for a feature is handled according to the feature's purpose.</p></section>
+<section><h2 class="text-lg font-bold text-white mb-2">3. Advertising</h2><p>The free app may use Google Mobile Ads/AdMob services to display advertisements. Advertising providers may process information such as advertising identifiers and device/app information according to their applicable policies and user consent choices.</p></section>
+<section><h2 class="text-lg font-bold text-white mb-2">4. Support</h2><p>For support or privacy requests, contact <a class="text-blue-400 font-semibold" href="mailto:akhileshsworks@gmail.com">akhileshsworks@gmail.com</a>. We do not ask you to send passwords, card numbers, CVV, OTPs or UPI PINs.</p></section>
+<section><h2 class="text-lg font-bold text-white mb-2">5. Business Information</h2><p>A28 TECHNOLOGIES<br>Nehru Chowk Road, Ainapur<br>Kagwad Taluk, Belagavi District<br>Karnataka – 591303, India</p></section>
+</div></div></main><div class="max-w-4xl mx-auto px-6 pb-8 text-center text-xs text-slate-500"><a href="about.html" class="mx-2">About</a><a href="products.html" class="mx-2">Products & Pricing</a><a href="delivery-policy.html" class="mx-2">Delivery</a><a href="refund-policy.html" class="mx-2">Refund</a><a href="terms.html" class="mx-2">Terms</a><a href="contact.html" class="mx-2">Contact</a></div><footer class="border-t border-slate-900 py-8 text-center text-xs text-slate-500">© 2026 A28 TECHNOLOGIES. All rights reserved.</footer></body></html>
