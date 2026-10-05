@@ -2,6 +2,49 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /analytics_events/{eventId} {
+      allow create: if
+        request.resource.data.event_name is string &&
+        request.resource.data.event_name.size() <= 80 &&
+        request.resource.data.install_id is string &&
+        request.resource.data.install_id.size() <= 100 &&
+        request.resource.data.app_version is string &&
+        request.resource.data.version_code is int &&
+        request.resource.data.device_model is string &&
+        request.resource.data.device_manufacturer is string &&
+        request.resource.data.android_version is string &&
+        request.resource.data.timestamp is timestamp;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /analytics_users/{installId} {
+      allow create, update: if
+        request.resource.data.install_id is string &&
+        request.resource.data.install_id == installId &&
+        request.resource.data.app_version is string &&
+        request.resource.data.version_code is int &&
+        request.resource.data.device_model is string &&
+        request.resource.data.device_manufacturer is string &&
+        request.resource.data.android_version is string &&
+        request.resource.data.last_seen is timestamp;
+      allow read: if isAdmin();
+      allow delete: if false;
+    }
+
+    // Legacy feedback collection is kept read/write restricted for V1.
     match /feedback/{feedbackId} {
       allow create: if
         request.resource.data.rating is int &&
