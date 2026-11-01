@@ -156,6 +156,8 @@ import androidx.compose.ui.unit.sp
 import com.aistudio.smarttoolkit.tyvz.R
 import com.aistudio.smarttoolkit.tyvz.ads.StickyBannerAd
 import com.aistudio.smarttoolkit.tyvz.billing.BillingManager
+import com.aistudio.smarttoolkit.tyvz.auth.AuthManager
+import com.aistudio.smarttoolkit.tyvz.auth.EmailAuthScreen
 import com.aistudio.smarttoolkit.tyvz.model.AppPreferencesManager
 import com.aistudio.smarttoolkit.tyvz.model.AppScreen
 import com.aistudio.smarttoolkit.tyvz.model.ThemeMode
@@ -324,6 +326,9 @@ fun DashboardScreen(
     var selectedCategoryFilter by rememberSaveable { mutableStateOf(ToolCategory.ALL) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showCoffeeDialog by remember { mutableStateOf(false) }
+    var showEmailAuth by rememberSaveable { mutableStateOf(false) }
+    var authRefresh by remember { mutableStateOf(0) }
+    val signedInEmail = remember(authRefresh) { AuthManager.currentUser?.email }
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     var isDownloadingUpdate by remember { mutableStateOf(false) }
     var updateProgress by remember { mutableStateOf(0) }
@@ -1133,8 +1138,18 @@ fun DashboardScreen(
                     onBrowseTools = { activeTab = NavTab.CATEGORIES }
                 )
 
-                NavTab.PROFILE -> ProfileTabContent(
+                NavTab.PROFILE -> if (showEmailAuth) {
+                    EmailAuthScreen(
+                        onSignedIn = { authRefresh++; showEmailAuth = false },
+                        onContinueWithoutAccount = { showEmailAuth = false }
+                    )
+                } else ProfileTabContent(
                     listState = profileListState,
+                    accountEmail = signedInEmail,
+                    onAccountAction = {
+                        if (AuthManager.currentUser == null) showEmailAuth = true
+                        else { AuthManager.signOut(); authRefresh++ }
+                    },
                     themeMode = themeMode,
                     onSetThemeMode = { mode ->
                         HapticUtils.performClick(context)
@@ -1620,6 +1635,8 @@ private fun FavoritesTabContent(
 @Composable
 private fun ProfileTabContent(
     listState: LazyListState,
+    accountEmail: String?,
+    onAccountAction: () -> Unit,
     themeMode: ThemeMode,
     onSetThemeMode: (ThemeMode) -> Unit,
     onShareApp: () -> Unit,
@@ -1633,6 +1650,28 @@ private fun ProfileTabContent(
         state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
+        item {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
+                    Text("APS TOOLS ಖಾತೆ", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = accountEmail ?: "ಖಾತೆಗೆ ಪ್ರವೇಶಿಸಿಲ್ಲ. PRO ಚಂದಾದಾರಿಕೆಗೆ ಖಾತೆ ಅಗತ್ಯ.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedButton(onClick = onAccountAction, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (accountEmail == null) "ಪ್ರವೇಶಿಸಿ / ಖಾತೆ ರಚಿಸಿ" else "ಖಾತೆಯಿಂದ ಹೊರಹೋಗಿ")
+                    }
+                }
+            }
+        }
+
         // App Profile Card Header
         item {
             Card(
