@@ -39,7 +39,7 @@ fun EmailAuthScreen(
             onSuccess = {
                 error = false
                 message = successMessage
-                if (mode != AuthMode.RESET) onSignedIn()
+                if (mode == AuthMode.SIGN_IN) onSignedIn()
             },
             onFailure = {
                 error = true
