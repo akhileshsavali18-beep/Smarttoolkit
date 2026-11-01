@@ -18,8 +18,14 @@ object AuthManager {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val user = auth.currentUser
-                    if (user != null) onResult(Result.success(user))
-                    else onResult(Result.failure(IllegalStateException("ಪ್ರವೇಶ ವಿಫಲವಾಗಿದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.")))
+                    if (user == null) {
+                        onResult(Result.failure(IllegalStateException("ಪ್ರವೇಶ ವಿಫಲವಾಗಿದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.")))
+                    } else if (!user.isEmailVerified) {
+                        auth.signOut()
+                        onResult(Result.failure(IllegalStateException("ಮುಂದುವರಿಯುವ ಮೊದಲು ನಿಮ್ಮ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ.")))
+                    } else {
+                        onResult(Result.success(user))
+                    }
                 } else {
                     onResult(Result.failure(task.exception ?: Exception("ಪ್ರವೇಶ ವಿಫಲವಾಗಿದೆ.")))
                 }
@@ -32,8 +38,15 @@ object AuthManager {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        user.sendEmailVerification().addOnCompleteListener {
-                            onResult(Result.success(user))
+                        user.sendEmailVerification().addOnCompleteListener { verificationTask ->
+                            if (verificationTask.isSuccessful) {
+                                auth.signOut()
+                                onResult(Result.success(user))
+                            } else {
+                                onResult(Result.failure(
+                                    verificationTask.exception ?: Exception("ಪರಿಶೀಲನಾ ಇಮೇಲ್ ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ.")
+                                ))
+                            }
                         }
                     } else {
                         onResult(Result.failure(IllegalStateException("ಖಾತೆ ರಚನೆಯಾಗಲಿಲ್ಲ.")))
