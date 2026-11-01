@@ -806,4 +806,3 @@ private class QrFrameAnalyzer(
             processing.set(false)
         }
     }
-}
