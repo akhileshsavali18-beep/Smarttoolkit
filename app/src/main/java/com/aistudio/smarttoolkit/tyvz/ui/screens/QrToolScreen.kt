@@ -612,8 +612,6 @@ fun QrToolScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
-}
 
 
 @Composable
@@ -806,3 +804,4 @@ private class QrFrameAnalyzer(
             processing.set(false)
         }
     }
+}
