@@ -1183,6 +1183,7 @@ fun DashboardScreen(
                     )
                 } else ProfileTabContent(
                     listState = profileListState,
+                    language = appLanguage,
                     accountEmail = signedInEmail,
                     onAccountAction = {
                         if (AuthManager.currentUser == null) showEmailAuth = true
@@ -1675,6 +1676,7 @@ private fun FavoritesTabContent(
 @Composable
 private fun ProfileTabContent(
     listState: LazyListState,
+    language: AppLanguage,
     accountEmail: String?,
     onAccountAction: () -> Unit,
     onShareApp: () -> Unit,
@@ -1695,7 +1697,7 @@ private fun ProfileTabContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
-                    Text(when (appLanguage) {
+                    Text(when (language) {
                         AppLanguage.KANNADA -> "APS TOOLS ಖಾತೆ"
                         AppLanguage.TELUGU -> "APS TOOLS ఖాతా"
                         AppLanguage.TAMIL -> "APS TOOLS கணக்கு"
@@ -1705,7 +1707,7 @@ private fun ProfileTabContent(
                     }, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = accountEmail ?: when (appLanguage) {
+                        text = accountEmail ?: when (language) {
                             AppLanguage.KANNADA -> "ಖಾತೆಗೆ ಪ್ರವೇಶಿಸಿಲ್ಲ. PRO ಚಂದಾದಾರಿಕೆಗೆ ಖಾತೆ ಅಗತ್ಯ."
                             AppLanguage.TELUGU -> "సైన్ ఇన్ కాలేదు. PRO కోసం ఖాతా అవసరం."
                             AppLanguage.TAMIL -> "உள்நுழையவில்லை. PRO சந்தாவிற்கு கணக்கு தேவை."
@@ -1718,14 +1720,14 @@ private fun ProfileTabContent(
                     )
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(onClick = onAccountAction, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (accountEmail == null) when (appLanguage) {
+                        Text(if (accountEmail == null) when (language) {
                             AppLanguage.KANNADA -> "ಪ್ರವೇಶಿಸಿ / ಖಾತೆ ರಚಿಸಿ"
                             AppLanguage.TELUGU -> "సైన్ ఇన్ / ఖాతా సృష్టించండి"
                             AppLanguage.TAMIL -> "உள்நுழை / கணக்கை உருவாக்கு"
                             AppLanguage.MARATHI -> "साइन इन / खाते तयार करा"
                             AppLanguage.HINDI -> "साइन इन / खाता बनाएं"
                             else -> "Sign in / Create account"
-                        } else when (appLanguage) {
+                        } else when (language) {
                             AppLanguage.KANNADA -> "ಖಾತೆಯಿಂದ ಹೊರಹೋಗಿ"
                             AppLanguage.TELUGU -> "సైన్ అవుట్"
                             AppLanguage.TAMIL -> "வெளியேறு"
