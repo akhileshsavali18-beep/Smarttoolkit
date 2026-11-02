@@ -381,6 +381,15 @@ async function webhook(request: Request, env: Env): Promise<Response> {
     event.event === "subscription.paused" ||
     event.event === "subscription.completed";
 
+  // Atomically claim the event ID before mutating entitlements. Only the first
+  // delivery can proceed; concurrent/replayed deliveries are acknowledged as duplicates.
+  const firstDelivery = await firestoreCreateOnce(env, accessToken, `razorpayWebhookEvents/${encodeURIComponent(eventId)}`, {
+    eventId, event: event.event, subscriptionId, uid, state: "processing", receivedAt: now,
+  });
+  if (!firstDelivery) {
+    return json({ received: true, duplicate: true, event: event.event });
+  }
+
   if (activated && (current.status === "active" || current.status === "authenticated")) {
     if (!currentEnd || currentEnd <= now) {
       return json({ error: "INVALID_SUBSCRIPTION_PERIOD" }, 400);
@@ -401,10 +410,10 @@ async function webhook(request: Request, env: Env): Promise<Response> {
     });
   }
 
-  const firstDelivery = await firestoreCreateOnce(env, accessToken, `razorpayWebhookEvents/${encodeURIComponent(eventId)}`, {
-    eventId, event: event.event, subscriptionId, uid, processedAt: now,
+  await firestorePatch(env, accessToken, `razorpayWebhookEvents/${encodeURIComponent(eventId)}`, {
+    eventId, event: event.event, subscriptionId, uid, state: "processed", processedAt: Date.now(),
   });
-  return json({ received: true, processed: true, duplicate: !firstDelivery, event: event.event });
+  return json({ received: true, processed: true, duplicate: false, event: event.event });
 }
 
 export default {
