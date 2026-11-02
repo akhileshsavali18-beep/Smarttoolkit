@@ -50,7 +50,7 @@ async function hmacHex(secret: string, message: string): Promise<string> {
   return [...signature].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function constantTimeEqual(a: string, b: string): boolean {
+export function constantTimeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
@@ -179,13 +179,13 @@ async function razorpayRequest(env: Env, path: string, method: string, body?: un
   return response.json();
 }
 
-function amountFor(plan: Plan): number {
+export function amountFor(plan: Plan): number {
   if (plan === "intro") return 900;
   if (plan === "monthly") return 9900;
   return 79900;
 }
 
-function planFrom(value: unknown): Plan | null {
+export function planFrom(value: unknown): Plan | null {
   return value === "intro" || value === "monthly" || value === "yearly" ? value : null;
 }
 
