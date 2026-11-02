@@ -7,6 +7,7 @@ import android.net.Uri
 import android.widget.Toast
 import com.aistudio.smarttoolkit.tyvz.ads.AdManager
 import com.aistudio.smarttoolkit.tyvz.ads.ConsentManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -160,6 +161,7 @@ import com.aistudio.smarttoolkit.tyvz.ads.StickyBannerAd
 import com.aistudio.smarttoolkit.tyvz.billing.BillingManager
 import com.aistudio.smarttoolkit.tyvz.auth.AuthManager
 import com.aistudio.smarttoolkit.tyvz.auth.EmailAuthScreen
+import com.aistudio.smarttoolkit.tyvz.ui.components.ProUpgradeDialog
 import com.aistudio.smarttoolkit.tyvz.model.AppPreferencesManager
 import com.aistudio.smarttoolkit.tyvz.model.AppLanguage
 import com.aistudio.smarttoolkit.tyvz.model.AppScreen
@@ -298,7 +300,16 @@ enum class NavTab(val title: String, val selectedIcon: ImageVector, val unselect
     HOME("Home", Icons.Filled.Home, Icons.Outlined.Home),
     CATEGORIES("Categories", Icons.Filled.Category, Icons.Outlined.Category),
     FAVOURITES("Favourites", Icons.Filled.Star, Icons.Outlined.StarBorder),
-    PROFILE("Profile", Icons.Filled.Person, Icons.Outlined.Person)
+    PROFILE("Profile", Icons.Filled.Person, Icons.Outlined.Person);
+
+    fun localizedTitle(language: AppLanguage): String = when (language) {
+        AppLanguage.KANNADA -> when (this) { HOME -> "ಮುಖಪುಟ"; CATEGORIES -> "ವಿಭಾಗಗಳು"; FAVOURITES -> "ಮೆಚ್ಚಿನವು"; PROFILE -> "ಪ್ರೊಫೈಲ್" }
+        AppLanguage.TELUGU -> when (this) { HOME -> "హోమ్"; CATEGORIES -> "వర్గాలు"; FAVOURITES -> "ఇష్టమైనవి"; PROFILE -> "ప్రొఫైల్" }
+        AppLanguage.TAMIL -> when (this) { HOME -> "முகப்பு"; CATEGORIES -> "வகைகள்"; FAVOURITES -> "பிடித்தவை"; PROFILE -> "சுயவிவரம்" }
+        AppLanguage.MARATHI -> when (this) { HOME -> "मुख्यपृष्ठ"; CATEGORIES -> "विभाग"; FAVOURITES -> "आवडते"; PROFILE -> "प्रोफाइल" }
+        AppLanguage.HINDI -> when (this) { HOME -> "होम"; CATEGORIES -> "श्रेणियाँ"; FAVOURITES -> "पसंदीदा"; PROFILE -> "प्रोफ़ाइल" }
+        else -> title
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -316,6 +327,7 @@ fun DashboardScreen(
     val appLanguage by preferencesManager.language.collectAsState()
     val isCurrentlyDark = themeMode == ThemeMode.DARK
     var showLanguageMenu by remember { mutableStateOf(false) }
+    var showProDialog by remember { mutableStateOf(false) }
 
     // Preserve the selected bottom tab and each tab's scroll position when returning from tools.
     var activeTab by rememberSaveable { mutableStateOf(NavTab.HOME) }
@@ -961,7 +973,7 @@ fun DashboardScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
-                            painter = painterResource(id = R.drawable.ic_launcher),
+                            painter = painterResource(id = R.drawable.aps_tools_logo),
                             contentDescription = "APS Tools Banner Logo",
                             modifier = Modifier
                                 .height(38.dp)
@@ -998,8 +1010,7 @@ fun DashboardScreen(
                     TextButton(
                         onClick = {
                             HapticUtils.performClick(context)
-                            activeTab = NavTab.PROFILE
-                            if (AuthManager.currentUser == null) showEmailAuth = true
+                            showProDialog = true
                         },
                         modifier = Modifier.testTag("pro_header_button")
                     ) {
@@ -1084,7 +1095,7 @@ fun DashboardScreen(
                             },
                             label = {
                                 Text(
-                                    text = tab.title,
+                                    text = tab.localizedTitle(appLanguage),
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     fontSize = 11.sp
                                 )
@@ -1163,8 +1174,10 @@ fun DashboardScreen(
                 )
 
                 NavTab.PROFILE -> if (showEmailAuth) {
+                    BackHandler(enabled = true) { showEmailAuth = false }
                     EmailAuthScreen(
                         language = appLanguage,
+                        onBack = { showEmailAuth = false },
                         onSignedIn = { authRefresh++; showEmailAuth = false },
                         onContinueWithoutAccount = { showEmailAuth = false }
                     )
@@ -1192,6 +1205,13 @@ fun DashboardScreen(
             }
         }
     }
+    if (showProDialog) {
+        ProUpgradeDialog(
+            billingManager = billingManager,
+            onDismissRequest = { showProDialog = false }
+        )
+    }
+
 }
 
 // -----------------------------------------------------------------------------------------
@@ -1675,16 +1695,44 @@ private fun ProfileTabContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
-                    Text("APS TOOLS ಖಾತೆ", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text(when (appLanguage) {
+                        AppLanguage.KANNADA -> "APS TOOLS ಖಾತೆ"
+                        AppLanguage.TELUGU -> "APS TOOLS ఖాతా"
+                        AppLanguage.TAMIL -> "APS TOOLS கணக்கு"
+                        AppLanguage.MARATHI -> "APS TOOLS खाते"
+                        AppLanguage.HINDI -> "APS TOOLS खाता"
+                        else -> "APS TOOLS Account"
+                    }, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = accountEmail ?: "ಖಾತೆಗೆ ಪ್ರವೇಶಿಸಿಲ್ಲ. PRO ಚಂದಾದಾರಿಕೆಗೆ ಖಾತೆ ಅಗತ್ಯ.",
+                        text = accountEmail ?: when (appLanguage) {
+                            AppLanguage.KANNADA -> "ಖಾತೆಗೆ ಪ್ರವೇಶಿಸಿಲ್ಲ. PRO ಚಂದಾದಾರಿಕೆಗೆ ಖಾತೆ ಅಗತ್ಯ."
+                            AppLanguage.TELUGU -> "సైన్ ఇన్ కాలేదు. PRO కోసం ఖాతా అవసరం."
+                            AppLanguage.TAMIL -> "உள்நுழையவில்லை. PRO சந்தாவிற்கு கணக்கு தேவை."
+                            AppLanguage.MARATHI -> "साइन इन केलेले नाही. PRO साठी खाते आवश्यक आहे."
+                            AppLanguage.HINDI -> "साइन इन नहीं है। PRO सदस्यता के लिए खाता आवश्यक है।"
+                            else -> "Not signed in. An account is required for PRO."
+                        },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(onClick = onAccountAction, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (accountEmail == null) "ಪ್ರವೇಶಿಸಿ / ಖಾತೆ ರಚಿಸಿ" else "ಖಾತೆಯಿಂದ ಹೊರಹೋಗಿ")
+                        Text(if (accountEmail == null) when (appLanguage) {
+                            AppLanguage.KANNADA -> "ಪ್ರವೇಶಿಸಿ / ಖಾತೆ ರಚಿಸಿ"
+                            AppLanguage.TELUGU -> "సైన్ ఇన్ / ఖాతా సృష్టించండి"
+                            AppLanguage.TAMIL -> "உள்நுழை / கணக்கை உருவாக்கு"
+                            AppLanguage.MARATHI -> "साइन इन / खाते तयार करा"
+                            AppLanguage.HINDI -> "साइन इन / खाता बनाएं"
+                            else -> "Sign in / Create account"
+                        } else when (appLanguage) {
+                            AppLanguage.KANNADA -> "ಖಾತೆಯಿಂದ ಹೊರಹೋಗಿ"
+                            AppLanguage.TELUGU -> "సైన్ అవుట్"
+                            AppLanguage.TAMIL -> "வெளியேறு"
+                            AppLanguage.MARATHI -> "साइन आउट"
+                            AppLanguage.HINDI -> "साइन आउट"
+                            else -> "Sign out"
+                        })
                     }
                 }
             }
@@ -1705,7 +1753,7 @@ private fun ProfileTabContent(
                         .padding(20.dp)
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_launcher),
+                        painter = painterResource(id = R.drawable.aps_tools_logo),
                         contentDescription = "App Icon",
                         modifier = Modifier
                             .size(72.dp)

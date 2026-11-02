@@ -2,6 +2,7 @@ package com.aistudio.smarttoolkit.tyvz.auth
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
 
 /**
  * Email/password authentication only. Subscription entitlement must never be
@@ -32,20 +33,29 @@ object AuthManager {
             }
     }
 
-    fun register(email: String, password: String, onResult: (Result<FirebaseUser>) -> Unit) {
+    fun register(fullName: String, email: String, password: String, onResult: (Result<FirebaseUser>) -> Unit) {
         auth.createUserWithEmailAndPassword(email.trim(), password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        user.sendEmailVerification().addOnCompleteListener { verificationTask ->
-                            if (verificationTask.isSuccessful) {
-                                auth.signOut()
-                                onResult(Result.success(user))
+                        val profile = UserProfileChangeRequest.Builder()
+                            .setDisplayName(fullName.trim())
+                            .build()
+                        user.updateProfile(profile).addOnCompleteListener { profileTask ->
+                            if (!profileTask.isSuccessful) {
+                                onResult(Result.failure(profileTask.exception ?: Exception("ಹೆಸರು ಉಳಿಸಲಾಗಲಿಲ್ಲ.")))
                             } else {
-                                onResult(Result.failure(
-                                    verificationTask.exception ?: Exception("ಪರಿಶೀಲನಾ ಇಮೇಲ್ ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ.")
-                                ))
+                                user.sendEmailVerification().addOnCompleteListener { verificationTask ->
+                                    if (verificationTask.isSuccessful) {
+                                        auth.signOut()
+                                        onResult(Result.success(user))
+                                    } else {
+                                        onResult(Result.failure(
+                                            verificationTask.exception ?: Exception("ಪರಿಶೀಲನಾ ಇಮೇಲ್ ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ.")
+                                        ))
+                                    }
+                                }
                             }
                         }
                     } else {

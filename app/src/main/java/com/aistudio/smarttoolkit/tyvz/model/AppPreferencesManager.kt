@@ -2,6 +2,7 @@ package com.aistudio.smarttoolkit.tyvz.model
 
 import android.content.Context
 import android.content.res.Configuration
+import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,7 +36,7 @@ class AppPreferencesManager(context: Context) {
     private val _themeMode = MutableStateFlow(getSavedThemeMode(context))
     val themeMode: StateFlow<ThemeMode> = _themeMode
 
-    private val _language = MutableStateFlow(getSavedLanguage())
+    private val _language = MutableStateFlow(getSavedLanguage(context))
     val language: StateFlow<AppLanguage> = _language.asStateFlow()
 
     private val _useDynamicColor = MutableStateFlow(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
@@ -66,10 +67,24 @@ class AppPreferencesManager(context: Context) {
         return mode
     }
 
-    private fun getSavedLanguage(): AppLanguage {
-        val saved = prefs.getString(KEY_LANGUAGE, AppLanguage.ENGLISH.name)
-        return runCatching { AppLanguage.valueOf(saved ?: AppLanguage.ENGLISH.name) }
-            .getOrDefault(AppLanguage.ENGLISH)
+    private fun getSavedLanguage(context: Context): AppLanguage {
+        val saved = prefs.getString(KEY_LANGUAGE, null)
+        if (saved != null) {
+            return runCatching { AppLanguage.valueOf(saved) }.getOrDefault(AppLanguage.ENGLISH)
+        }
+        val deviceLanguage = context.resources.configuration.locales[0]?.language
+            ?: Locale.getDefault().language
+        val detected = when (deviceLanguage.lowercase(Locale.ROOT)) {
+            "kn" -> AppLanguage.KANNADA
+            "te" -> AppLanguage.TELUGU
+            "ta" -> AppLanguage.TAMIL
+            "mr" -> AppLanguage.MARATHI
+            "hi" -> AppLanguage.HINDI
+            else -> AppLanguage.ENGLISH
+        }
+        // Persist the first-launch device choice; later manual choices remain stable.
+        prefs.edit().putString(KEY_LANGUAGE, detected.name).apply()
+        return detected
     }
 
     private fun getSavedFavorites(): Set<String> {
