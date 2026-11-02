@@ -1,6 +1,7 @@
 package com.aistudio.smarttoolkit.tyvz.model
 
 import android.content.Context
+import android.content.res.Configuration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,9 +10,17 @@ import kotlinx.coroutines.flow.asStateFlow
  * Theme mode options for APS TOOLS.
  */
 enum class ThemeMode(val title: String) {
-    SYSTEM("System Default"),
     LIGHT("Light Mode"),
     DARK("Dark Mode")
+}
+
+enum class AppLanguage(val nativeName: String, val shortCode: String) {
+    ENGLISH("English", "EN"),
+    KANNADA("ಕನ್ನಡ", "ಕ"),
+    TELUGU("తెలుగు", "తె"),
+    TAMIL("தமிழ்", "த"),
+    MARATHI("मराठी", "म"),
+    HINDI("हिन्दी", "हि")
 }
 
 /**
@@ -23,8 +32,11 @@ class AppPreferencesManager(context: Context) {
 
     private val prefs = context.getSharedPreferences("aps_tools_prefs", Context.MODE_PRIVATE)
 
-    private val _themeMode = MutableStateFlow(getSavedThemeMode())
-    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+    private val _themeMode = MutableStateFlow(getSavedThemeMode(context))
+    val themeMode: StateFlow<ThemeMode> = _themeMode
+
+    private val _language = MutableStateFlow(getSavedLanguage())
+    val language: StateFlow<AppLanguage> = _language.asStateFlow()
 
     private val _useDynamicColor = MutableStateFlow(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
     val useDynamicColor: StateFlow<Boolean> = _useDynamicColor.asStateFlow()
@@ -40,13 +52,24 @@ class AppPreferencesManager(context: Context) {
     private val _notificationsEnabled = MutableStateFlow(prefs.getBoolean(KEY_NOTIFICATIONS, true))
     val notificationsEnabled: StateFlow<Boolean> = _notificationsEnabled.asStateFlow()
 
-    private fun getSavedThemeMode(): ThemeMode {
-        val name = prefs.getString(KEY_THEME_MODE, ThemeMode.SYSTEM.name)
-        return try {
-            ThemeMode.valueOf(name ?: ThemeMode.SYSTEM.name)
-        } catch (_: Exception) {
-            ThemeMode.SYSTEM
+    private fun getSavedThemeMode(context: Context): ThemeMode {
+        val saved = prefs.getString(KEY_THEME_MODE, null)
+        val mode = when (saved) {
+            ThemeMode.LIGHT.name -> ThemeMode.LIGHT
+            ThemeMode.DARK.name -> ThemeMode.DARK
+            else -> {
+                val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                if (night == Configuration.UI_MODE_NIGHT_YES) ThemeMode.DARK else ThemeMode.LIGHT
+            }
         }
+        if (saved != mode.name) prefs.edit().putString(KEY_THEME_MODE, mode.name).apply()
+        return mode
+    }
+
+    private fun getSavedLanguage(): AppLanguage {
+        val saved = prefs.getString(KEY_LANGUAGE, AppLanguage.ENGLISH.name)
+        return runCatching { AppLanguage.valueOf(saved ?: AppLanguage.ENGLISH.name) }
+            .getOrDefault(AppLanguage.ENGLISH)
     }
 
     private fun getSavedFavorites(): Set<String> {
@@ -65,6 +88,11 @@ class AppPreferencesManager(context: Context) {
     fun setThemeMode(mode: ThemeMode) {
         prefs.edit().putString(KEY_THEME_MODE, mode.name).apply()
         _themeMode.value = mode
+    }
+
+    fun setLanguage(language: AppLanguage) {
+        prefs.edit().putString(KEY_LANGUAGE, language.name).apply()
+        _language.value = language
     }
 
     fun setDynamicColor(enabled: Boolean) {
@@ -104,6 +132,7 @@ class AppPreferencesManager(context: Context) {
 
     companion object {
         private const val KEY_THEME_MODE = "key_theme_mode"
+        private const val KEY_LANGUAGE = "key_language"
         private const val KEY_DYNAMIC_COLOR = "key_dynamic_color"
         private const val KEY_FAVORITES = "key_favorites"
         private const val KEY_RECENT_TOOLS = "key_recent_tools"

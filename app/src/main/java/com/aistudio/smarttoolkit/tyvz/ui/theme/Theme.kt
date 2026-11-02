@@ -110,11 +110,7 @@ fun ApsToolsTheme(
   val themeMode by preferencesManager.themeMode.collectAsState()
   val useDynamicColor by preferencesManager.useDynamicColor.collectAsState()
 
-  val isDarkTheme = when (themeMode) {
-    com.aistudio.smarttoolkit.tyvz.model.ThemeMode.SYSTEM -> isSystemInDarkTheme()
-    com.aistudio.smarttoolkit.tyvz.model.ThemeMode.LIGHT -> false
-    com.aistudio.smarttoolkit.tyvz.model.ThemeMode.DARK -> true
-  }
+  val isDarkTheme = themeMode == com.aistudio.smarttoolkit.tyvz.model.ThemeMode.DARK
 
   MyApplicationTheme(
     darkTheme = isDarkTheme,

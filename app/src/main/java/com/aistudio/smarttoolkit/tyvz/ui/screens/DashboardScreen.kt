@@ -111,6 +111,8 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
@@ -159,6 +161,7 @@ import com.aistudio.smarttoolkit.tyvz.billing.BillingManager
 import com.aistudio.smarttoolkit.tyvz.auth.AuthManager
 import com.aistudio.smarttoolkit.tyvz.auth.EmailAuthScreen
 import com.aistudio.smarttoolkit.tyvz.model.AppPreferencesManager
+import com.aistudio.smarttoolkit.tyvz.model.AppLanguage
 import com.aistudio.smarttoolkit.tyvz.model.AppScreen
 import com.aistudio.smarttoolkit.tyvz.model.ThemeMode
 import com.aistudio.smarttoolkit.tyvz.model.ToolCategory
@@ -310,12 +313,9 @@ fun DashboardScreen(
     val favoriteScreens by preferencesManager.favoriteTools.collectAsState()
     val recentScreenNames by preferencesManager.recentTools.collectAsState()
     val themeMode by preferencesManager.themeMode.collectAsState()
-    val isSystemDark = isSystemInDarkTheme()
-    val isCurrentlyDark = when (themeMode) {
-        ThemeMode.SYSTEM -> isSystemDark
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-    }
+    val appLanguage by preferencesManager.language.collectAsState()
+    val isCurrentlyDark = themeMode == ThemeMode.DARK
+    var showLanguageMenu by remember { mutableStateOf(false) }
 
     // Preserve the selected bottom tab and each tab's scroll position when returning from tools.
     var activeTab by rememberSaveable { mutableStateOf(NavTab.HOME) }
@@ -995,16 +995,41 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
-                    // Dark / Light Mode Switch
+                    TextButton(
+                        onClick = {
+                            HapticUtils.performClick(context)
+                            activeTab = NavTab.PROFILE
+                            if (AuthManager.currentUser == null) showEmailAuth = true
+                        },
+                        modifier = Modifier.testTag("pro_header_button")
+                    ) {
+                        Icon(Icons.Default.WorkspacePremium, contentDescription = "PRO")
+                        Text("PRO", fontWeight = FontWeight.Bold)
+                    }
+                    Box {
+                        TextButton(
+                            onClick = { showLanguageMenu = true },
+                            modifier = Modifier.testTag("language_header_button")
+                        ) { Text(appLanguage.shortCode, fontWeight = FontWeight.Bold) }
+                        DropdownMenu(expanded = showLanguageMenu, onDismissRequest = { showLanguageMenu = false }) {
+                            AppLanguage.values().forEach { language ->
+                                DropdownMenuItem(
+                                    text = { Text(language.nativeName) },
+                                    onClick = {
+                                        preferencesManager.setLanguage(language)
+                                        showLanguageMenu = false
+                                        HapticUtils.performClick(context)
+                                    }
+                                )
+                            }
+                        }
+                    }
                     IconButton(
                         onClick = {
                             HapticUtils.performClick(context)
-                            val nextMode = if (isCurrentlyDark) ThemeMode.LIGHT else ThemeMode.DARK
-                            preferencesManager.setThemeMode(nextMode)
+                            preferencesManager.setThemeMode(if (isCurrentlyDark) ThemeMode.LIGHT else ThemeMode.DARK)
                         },
-                        modifier = Modifier
-                            .testTag("theme_toggle_button")
-                            .size(40.dp)
+                        modifier = Modifier.testTag("theme_toggle_button").size(40.dp)
                     ) {
                         AnimatedContent(
                             targetState = isCurrentlyDark,
@@ -1022,7 +1047,6 @@ fun DashboardScreen(
                             )
                         }
                     }
-
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -1140,6 +1164,7 @@ fun DashboardScreen(
 
                 NavTab.PROFILE -> if (showEmailAuth) {
                     EmailAuthScreen(
+                        language = appLanguage,
                         onSignedIn = { authRefresh++; showEmailAuth = false },
                         onContinueWithoutAccount = { showEmailAuth = false }
                     )
@@ -1149,11 +1174,6 @@ fun DashboardScreen(
                     onAccountAction = {
                         if (AuthManager.currentUser == null) showEmailAuth = true
                         else { AuthManager.signOut(); authRefresh++ }
-                    },
-                    themeMode = themeMode,
-                    onSetThemeMode = { mode ->
-                        HapticUtils.performClick(context)
-                        preferencesManager.setThemeMode(mode)
                     },
                     onShareApp = { shareAppAction() },
                     onPrivacyPolicy = {
@@ -1637,8 +1657,6 @@ private fun ProfileTabContent(
     listState: LazyListState,
     accountEmail: String?,
     onAccountAction: () -> Unit,
-    themeMode: ThemeMode,
-    onSetThemeMode: (ThemeMode) -> Unit,
     onShareApp: () -> Unit,
     onPrivacyPolicy: () -> Unit,
     onBuyCoffee: () -> Unit,
@@ -1718,51 +1736,6 @@ private fun ProfileTabContent(
                             fontWeight = FontWeight.SemiBold,
                             color = ApsBlue
                         )
-                    }
-                }
-            }
-        }
-
-        // Preferences Section
-        item {
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "PREFERENCES",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 1.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Dark Theme Mode Selector
-                    Text("Theme Appearance", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        ThemeMode.values().forEach { mode ->
-                            val isSelected = themeMode == mode
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onSetThemeMode(mode) },
-                                label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ApsBlue,
-                                    selectedLabelColor = Color.White
-                                ),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
                     }
                 }
             }
