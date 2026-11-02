@@ -136,6 +136,35 @@ async function firestorePatch(env: Env, token: string, path: string, fields: Rec
   if (!response.ok) throw new Error("FIRESTORE_WRITE_FAILED");
 }
 
+
+async function firestoreCreateOnce(
+  env: Env, token: string, documentPath: string, fields: Record<string, unknown>
+): Promise<boolean> {
+  const encoded: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value === "string") encoded[key] = { stringValue: value };
+    else if (typeof value === "number") encoded[key] = { integerValue: String(value) };
+    else if (typeof value === "boolean") encoded[key] = { booleanValue: value };
+  }
+  const name = `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${documentPath}`;
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:commit`,
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        writes: [{
+          update: { name, fields: encoded },
+          currentDocument: { exists: false },
+        }],
+      }),
+    }
+  );
+  if (response.ok) return true;
+  if (response.status === 409 || response.status === 400) return false;
+  throw new Error("FIRESTORE_EVENT_WRITE_FAILED");
+}
+
 async function razorpayRequest(env: Env, path: string, method: string, body?: unknown): Promise<any> {
   const auth = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`);
   const response = await fetch(`https://api.razorpay.com/v1${path}`, {
@@ -298,6 +327,7 @@ async function webhook(request: Request, env: Env): Promise<Response> {
   }
 
   let event: {
+    id?: string;
     event?: string;
     payload?: { subscription?: { entity?: { id?: string } } };
   };
@@ -317,6 +347,8 @@ async function webhook(request: Request, env: Env): Promise<Response> {
     return json({ received: true, ignored: true });
   }
 
+  const eventId = request.headers.get("x-razorpay-event-id") ?? event.id ?? "";
+  if (!eventId) return json({ error: "MISSING_EVENT_ID" }, 400);
   const subscriptionId = event.payload?.subscription?.entity?.id;
   if (!subscriptionId) return json({ error: "MISSING_SUBSCRIPTION_ID" }, 400);
 
@@ -369,7 +401,10 @@ async function webhook(request: Request, env: Env): Promise<Response> {
     });
   }
 
-  return json({ received: true, processed: true, event: event.event });
+  const firstDelivery = await firestoreCreateOnce(env, accessToken, `razorpayWebhookEvents/${encodeURIComponent(eventId)}`, {
+    eventId, event: event.event, subscriptionId, uid, processedAt: now,
+  });
+  return json({ received: true, processed: true, duplicate: !firstDelivery, event: event.event });
 }
 
 export default {
