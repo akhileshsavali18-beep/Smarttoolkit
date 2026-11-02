@@ -14,6 +14,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Subscription entitlements are written only by the trusted payment backend.
+    // Signed-in users may read their own status, but cannot grant or modify PRO access.
+    match /subscriptions/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update, delete: if false;
+    }
+
     match /analytics_events/{eventId} {
       allow create: if
         request.resource.data.event_name is string &&
