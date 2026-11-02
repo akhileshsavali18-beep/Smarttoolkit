@@ -1,0 +1,276 @@
+export interface Env {
+  FIREBASE_PROJECT_ID: string;
+  FIREBASE_WEB_API_KEY: string;
+  RAZORPAY_KEY_ID: string;
+  RAZORPAY_KEY_SECRET: string;
+  RAZORPAY_WEBHOOK_SECRET: string;
+  FIREBASE_SERVICE_ACCOUNT_EMAIL: string;
+  FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY: string;
+}
+
+type Plan = "intro" | "monthly" | "yearly";
+
+interface OrderRecord {
+  uid: string;
+  plan: Plan;
+  amount: number;
+  currency: "INR";
+  createdAt: number;
+}
+
+const JSON_HEADERS = {
+  "content-type": "application/json; charset=utf-8",
+  "cache-control": "no-store",
+};
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
+}
+
+function base64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+function pemToBytes(pem: string): Uint8Array {
+  const body = pem.replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "").replace(/\s/g, "");
+  const binary = atob(body);
+  return Uint8Array.from(binary, c => c.charCodeAt(0));
+}
+
+async function hmacHex(secret: string, message: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message)));
+  return [...signature].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function verifyFirebaseIdToken(token: string, env: Env): Promise<string> {
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(env.FIREBASE_WEB_API_KEY)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ idToken: token }),
+  });
+  if (!response.ok) throw new Error("UNAUTHORIZED");
+  const data = await response.json() as { users?: Array<{ localId?: string; emailVerified?: boolean; disabled?: boolean }> };
+  const user = data.users?.[0];
+  if (!user?.localId || user.disabled) throw new Error("UNAUTHORIZED");
+  return user.localId;
+}
+
+async function firebaseAccessToken(env: Env): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64Url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
+  const claim = base64Url(new TextEncoder().encode(JSON.stringify({
+    iss: env.FIREBASE_SERVICE_ACCOUNT_EMAIL,
+    scope: "https://www.googleapis.com/auth/datastore",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  })));
+  const unsigned = header + "." + claim;
+  const key = await crypto.subtle.importKey(
+    "pkcs8", pemToBytes(env.FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned)));
+  const assertion = unsigned + "." + base64Url(signature);
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  if (!response.ok) throw new Error("FIREBASE_AUTH_FAILED");
+  const data = await response.json() as { access_token?: string };
+  if (!data.access_token) throw new Error("FIREBASE_AUTH_FAILED");
+  return data.access_token;
+}
+
+async function firestoreGet(env: Env, token: string, uid: string): Promise<Record<string, unknown> | null> {
+  const url = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/paymentOrders/${encodeURIComponent(uid)}`;
+  const response = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("FIRESTORE_READ_FAILED");
+  const doc = await response.json() as { fields?: Record<string, { stringValue?: string; integerValue?: string }> };
+  const fields = doc.fields ?? {};
+  return {
+    orderId: fields.orderId?.stringValue,
+    plan: fields.plan?.stringValue,
+    amount: Number(fields.amount?.integerValue ?? 0),
+    createdAt: Number(fields.createdAt?.integerValue ?? 0),
+  };
+}
+
+async function firestorePatch(env: Env, token: string, path: string, fields: Record<string, unknown>): Promise<void> {
+  const encoded: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value === "string") encoded[key] = { stringValue: value };
+    else if (typeof value === "number") encoded[key] = { integerValue: String(value) };
+    else if (typeof value === "boolean") encoded[key] = { booleanValue: value };
+  }
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`,
+    {
+      method: "PATCH",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ fields: encoded }),
+    }
+  );
+  if (!response.ok) throw new Error("FIRESTORE_WRITE_FAILED");
+}
+
+async function razorpayRequest(env: Env, path: string, method: string, body?: unknown): Promise<any> {
+  const auth = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`);
+  const response = await fetch(`https://api.razorpay.com/v1${path}`, {
+    method,
+    headers: {
+      authorization: `Basic ${auth}`,
+      "content-type": "application/json",
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error("RAZORPAY_REQUEST_FAILED");
+  return response.json();
+}
+
+function amountFor(plan: Plan): number {
+  if (plan === "intro") return 900;
+  if (plan === "monthly") return 9900;
+  return 79900;
+}
+
+function planFrom(value: unknown): Plan | null {
+  return value === "intro" || value === "monthly" || value === "yearly" ? value : null;
+}
+
+async function createOrder(request: Request, env: Env): Promise<Response> {
+  const uid = await authenticatedUid(request, env);
+  const body = await request.json() as { plan?: unknown };
+  const plan = planFrom(body.plan);
+  if (!plan) return json({ error: "INVALID_PLAN" }, 400);
+
+  const accessToken = await firebaseAccessToken(env);
+  const existing = await firestoreGet(env, accessToken, uid);
+  if (existing?.orderId && Date.now() - Number(existing.createdAt ?? 0) < 10 * 60 * 1000) {
+    return json({ orderId: existing.orderId, amount: existing.amount, currency: "INR", keyId: env.RAZORPAY_KEY_ID });
+  }
+
+  const amount = amountFor(plan);
+  const order = await razorpayRequest(env, "/orders", "POST", {
+    amount,
+    currency: "INR",
+    receipt: `aps_${uid.slice(0, 20)}_${Date.now()}`,
+    notes: { firebase_uid: uid, plan, app: "APS_TOOLS" },
+  }) as { id: string };
+
+  await firestorePatch(env, accessToken, `paymentOrders/${encodeURIComponent(uid)}`, {
+    uid, orderId: order.id, plan, amount, createdAt: Date.now(),
+  });
+  return json({ orderId: order.id, amount, currency: "INR", keyId: env.RAZORPAY_KEY_ID });
+}
+
+async function authenticatedUid(request: Request, env: Env): Promise<string> {
+  const auth = request.headers.get("authorization") ?? "";
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  if (!match) throw new Error("UNAUTHORIZED");
+  return verifyFirebaseIdToken(match[1], env);
+}
+
+async function verifyPayment(request: Request, env: Env): Promise<Response> {
+  const uid = await authenticatedUid(request, env);
+  const body = await request.json() as {
+    razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string;
+  };
+  const orderId = body.razorpay_order_id ?? "";
+  const paymentId = body.razorpay_payment_id ?? "";
+  const signature = body.razorpay_signature ?? "";
+  if (!orderId || !paymentId || !signature) return json({ error: "MISSING_PAYMENT_FIELDS" }, 400);
+
+  const accessToken = await firebaseAccessToken(env);
+  const record = await firestoreGet(env, accessToken, uid);
+  if (!record || record.orderId !== orderId) return json({ error: "ORDER_NOT_FOUND" }, 400);
+
+  const expected = await hmacHex(env.RAZORPAY_KEY_SECRET, `${orderId}|${paymentId}`);
+  if (!constantTimeEqual(expected, signature)) return json({ error: "INVALID_SIGNATURE" }, 400);
+
+  const payment = await razorpayRequest(env, `/payments/${encodeURIComponent(paymentId)}`, "GET") as {
+    id: string; order_id: string; status: string; amount: number; currency: string;
+  };
+  if (payment.order_id !== orderId || payment.status !== "captured" ||
+      payment.amount !== Number(record.amount) || payment.currency !== "INR") {
+    return json({ error: "PAYMENT_NOT_CAPTURED" }, 400);
+  }
+
+  const plan = planFrom(record.plan);
+  if (!plan) return json({ error: "INVALID_ORDER_PLAN" }, 400);
+  const now = Date.now();
+  const expiresAt = now + (plan === "intro" ? 30 : plan === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000;
+  await firestorePatch(env, accessToken, `subscriptions/${encodeURIComponent(uid)}`, {
+    uid, status: "active", plan, paymentId, orderId,
+    startedAt: now, expiresAt, updatedAt: now, source: "razorpay",
+  });
+  await firestorePatch(env, accessToken, `paymentOrders/${encodeURIComponent(uid)}`, {
+    uid, orderId, plan, amount: Number(record.amount), paymentId, paymentStatus: "captured",
+    createdAt: Number(record.createdAt), verifiedAt: now,
+  });
+  return json({ verified: true, status: "active", expiresAt });
+}
+
+async function webhook(request: Request, env: Env): Promise<Response> {
+  const raw = await request.text();
+  const supplied = request.headers.get("x-razorpay-signature") ?? "";
+  const expected = await hmacHex(env.RAZORPAY_WEBHOOK_SECRET, raw);
+  if (!supplied || !constantTimeEqual(expected, supplied)) return json({ error: "INVALID_WEBHOOK_SIGNATURE" }, 400);
+
+  const event = JSON.parse(raw) as {
+    event?: string;
+    payload?: { payment?: { entity?: { id?: string; order_id?: string; status?: string; amount?: number; notes?: Record<string, string> } } };
+  };
+  if (event.event !== "payment.captured") return json({ received: true, ignored: true });
+
+  const p = event.payload?.payment?.entity;
+  if (!p?.id || !p.order_id || p.status !== "captured") return json({ error: "INVALID_EVENT" }, 400);
+  // Entitlement is granted only through the authenticated app verification route,
+  // which binds the verified order to the signed-in Firebase UID and stored order.
+  // Webhook is signature-checked and acknowledged; reconciliation is intentionally
+  // deferred until order lookup and idempotent event storage are implemented.
+  return json({ received: true, pendingReconciliation: true });
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: {
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET,POST,OPTIONS",
+        "access-control-allow-headers": "authorization,content-type,x-razorpay-signature",
+        "access-control-max-age": "86400",
+      }});
+    }
+    try {
+      if (request.method === "GET" && url.pathname === "/health") return json({ ok: true, service: "aps-tools-payment" });
+      if (request.method === "POST" && url.pathname === "/orders") return await createOrder(request, env);
+      if (request.method === "POST" && url.pathname === "/verify") return await verifyPayment(request, env);
+      if (request.method === "POST" && url.pathname === "/webhook/razorpay") return await webhook(request, env);
+      return json({ error: "NOT_FOUND" }, 404);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "INTERNAL_ERROR";
+      const status = message === "UNAUTHORIZED" ? 401 : 500;
+      return json({ error: status === 401 ? "UNAUTHORIZED" : "PAYMENT_SERVICE_ERROR" }, status);
+    }
+  },
+};
