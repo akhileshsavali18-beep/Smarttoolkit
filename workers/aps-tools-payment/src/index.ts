@@ -390,7 +390,7 @@ async function webhook(request: Request, env: Env): Promise<Response> {
     return json({ received: true, duplicate: true, event: event.event });
   }
 
-  if (activated && (current.status === "active" || current.status === "authenticated")) {
+  if (activated && current.status === "active") {
     if (!currentEnd || currentEnd <= now) {
       return json({ error: "INVALID_SUBSCRIPTION_PERIOD" }, 400);
     }
