@@ -277,21 +277,83 @@ async function webhook(request: Request, env: Env): Promise<Response> {
   const raw = await request.text();
   const supplied = request.headers.get("x-razorpay-signature") ?? "";
   const expected = await hmacHex(env.RAZORPAY_WEBHOOK_SECRET, raw);
-  if (!supplied || !constantTimeEqual(expected, supplied)) return json({ error: "INVALID_WEBHOOK_SIGNATURE" }, 400);
+  if (!supplied || !constantTimeEqual(expected, supplied)) {
+    return json({ error: "INVALID_WEBHOOK_SIGNATURE" }, 400);
+  }
 
-  const event = JSON.parse(raw) as {
+  let event: {
     event?: string;
-    payload?: { payment?: { entity?: { id?: string; order_id?: string; status?: string; amount?: number; notes?: Record<string, string> } } };
+    payload?: { subscription?: { entity?: { id?: string } } };
   };
-  if (event.event !== "payment.captured") return json({ received: true, ignored: true });
+  try {
+    event = JSON.parse(raw);
+  } catch {
+    return json({ error: "INVALID_JSON" }, 400);
+  }
 
-  const p = event.payload?.payment?.entity;
-  if (!p?.id || !p.order_id || p.status !== "captured") return json({ error: "INVALID_EVENT" }, 400);
-  // Entitlement is granted only through the authenticated app verification route,
-  // which binds the verified order to the signed-in Firebase UID and stored order.
-  // Webhook is signature-checked and acknowledged; reconciliation is intentionally
-  // deferred until order lookup and idempotent event storage are implemented.
-  return json({ received: true, pendingReconciliation: true });
+  const supported = new Set([
+    "subscription.activated", "subscription.charged",
+    "subscription.cancelled", "subscription.halted",
+    "subscription.paused", "subscription.resumed",
+    "subscription.completed",
+  ]);
+  if (!event.event || !supported.has(event.event)) {
+    return json({ received: true, ignored: true });
+  }
+
+  const subscriptionId = event.payload?.subscription?.entity?.id;
+  if (!subscriptionId) return json({ error: "MISSING_SUBSCRIPTION_ID" }, 400);
+
+  // Never trust webhook entity fields alone. Fetch the current subscription
+  // directly from Razorpay before changing Firebase entitlements.
+  const current = await razorpayRequest(
+    env, `/subscriptions/${encodeURIComponent(subscriptionId)}`, "GET"
+  ) as {
+    id?: string; plan_id?: string; status?: string; current_end?: number;
+    notes?: Record<string, string>; paid_count?: number;
+  };
+  const uid = current.notes?.firebase_uid;
+  if (!uid || current.id !== subscriptionId) {
+    return json({ error: "SUBSCRIPTION_IDENTITY_MISMATCH" }, 400);
+  }
+
+  const plan: Plan | null =
+    current.plan_id === env.RAZORPAY_MONTHLY_PLAN_ID ? "monthly" :
+    current.plan_id === env.RAZORPAY_YEARLY_PLAN_ID ? "yearly" : null;
+  if (!plan) return json({ error: "UNKNOWN_RAZORPAY_PLAN" }, 400);
+
+  const accessToken = await firebaseAccessToken(env);
+  const now = Date.now();
+  const currentEnd = Number(current.current_end ?? 0) * 1000;
+  const activated = event.event === "subscription.activated" ||
+    event.event === "subscription.charged" ||
+    event.event === "subscription.resumed";
+  const terminal = event.event === "subscription.cancelled" ||
+    event.event === "subscription.halted" ||
+    event.event === "subscription.paused" ||
+    event.event === "subscription.completed";
+
+  if (activated && (current.status === "active" || current.status === "authenticated")) {
+    if (!currentEnd || currentEnd <= now) {
+      return json({ error: "INVALID_SUBSCRIPTION_PERIOD" }, 400);
+    }
+    await firestorePatch(env, accessToken, `subscriptions/${encodeURIComponent(uid)}`, {
+      uid, status: "active", plan, razorpaySubscriptionId: subscriptionId,
+      planId: current.plan_id ?? "", startedAt: now, expiresAt: currentEnd,
+      paidCount: Number(current.paid_count ?? 0), updatedAt: now,
+      source: "razorpay_subscription",
+    });
+  } else if (terminal) {
+    // Keep the actual gateway state. The app must fail closed unless status is active.
+    await firestorePatch(env, accessToken, `subscriptions/${encodeURIComponent(uid)}`, {
+      uid, status: current.status ?? "inactive", plan,
+      razorpaySubscriptionId: subscriptionId,
+      planId: current.plan_id ?? "", paidCount: Number(current.paid_count ?? 0),
+      updatedAt: now, source: "razorpay_subscription",
+    });
+  }
+
+  return json({ received: true, processed: true, event: event.event });
 }
 
 export default {
