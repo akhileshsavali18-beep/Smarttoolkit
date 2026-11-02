@@ -113,6 +113,8 @@ async function firestoreGet(env: Env, token: string, uid: string): Promise<Recor
     plan: fields.plan?.stringValue,
     amount: Number(fields.amount?.integerValue ?? 0),
     createdAt: Number(fields.createdAt?.integerValue ?? 0),
+    paymentId: fields.paymentId?.stringValue,
+    verifiedAt: Number(fields.verifiedAt?.integerValue ?? 0),
   };
 }
 
@@ -166,6 +168,19 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
 
   const accessToken = await firebaseAccessToken(env);
   const existing = await firestoreGet(env, accessToken, uid);
+  if (existing?.paymentId || existing?.verifiedAt) {
+    return json({ error: "INTRO_ALREADY_REDEEMED" }, 409);
+  }
+  const subscriptionUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/subscriptions/${encodeURIComponent(uid)}`;
+  const subscriptionResponse = await fetch(subscriptionUrl, { headers: { authorization: `Bearer ${accessToken}` } });
+  if (subscriptionResponse.ok) {
+    const subscriptionDoc = await subscriptionResponse.json() as { fields?: Record<string, { stringValue?: string }> };
+    if (subscriptionDoc.fields?.plan?.stringValue === "intro") {
+      return json({ error: "INTRO_ALREADY_REDEEMED" }, 409);
+    }
+  } else if (subscriptionResponse.status !== 404) {
+    throw new Error("FIRESTORE_READ_FAILED");
+  }
   if (existing?.orderId && Date.now() - Number(existing.createdAt ?? 0) < 10 * 60 * 1000) {
     return json({ orderId: existing.orderId, amount: existing.amount, currency: "INR", keyId: env.RAZORPAY_KEY_ID });
   }
@@ -204,6 +219,7 @@ async function verifyPayment(request: Request, env: Env): Promise<Response> {
   const accessToken = await firebaseAccessToken(env);
   const record = await firestoreGet(env, accessToken, uid);
   if (!record || record.orderId !== orderId) return json({ error: "ORDER_NOT_FOUND" }, 400);
+  if (record.paymentId || record.verifiedAt) return json({ error: "PAYMENT_ALREADY_VERIFIED" }, 409);
 
   const expected = await hmacHex(env.RAZORPAY_KEY_SECRET, `${orderId}|${paymentId}`);
   if (!constantTimeEqual(expected, signature)) return json({ error: "INVALID_SIGNATURE" }, 400);
