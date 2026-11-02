@@ -1,0 +1,14 @@
+name = "aps-tools-payment"
+main = "src/index.ts"
+compatibility_date = "2026-11-03"
+
+[vars]
+FIREBASE_PROJECT_ID = "aps-tools"
+FIREBASE_WEB_API_KEY = "REPLACE_WITH_FIREBASE_WEB_API_KEY"
+RAZORPAY_KEY_ID = "REPLACE_WITH_RAZORPAY_TEST_KEY_ID"
+
+# Add secrets with Wrangler secrets; never put secret values in this file:
+# RAZORPAY_KEY_SECRET
+# RAZORPAY_WEBHOOK_SECRET
+# FIREBASE_SERVICE_ACCOUNT_EMAIL
+# FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY
