@@ -6,6 +6,8 @@ compatibility_date = "2026-11-03"
 FIREBASE_PROJECT_ID = "aps-tools"
 FIREBASE_WEB_API_KEY = "REPLACE_WITH_FIREBASE_WEB_API_KEY"
 RAZORPAY_KEY_ID = "REPLACE_WITH_RAZORPAY_TEST_KEY_ID"
+RAZORPAY_MONTHLY_PLAN_ID = "plan_TuzhS9eGtdtAJ7"
+RAZORPAY_YEARLY_PLAN_ID = "plan_TuzIHMRGfqK5pu"
 
 # Add secrets with Wrangler secrets; never put secret values in this file:
 # RAZORPAY_KEY_SECRET
