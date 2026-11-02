@@ -231,6 +231,49 @@ async function verifyPayment(request: Request, env: Env): Promise<Response> {
   return json({ verified: true, status: "active", expiresAt });
 }
 
+
+async function createSubscription(request: Request, env: Env): Promise<Response> {
+  const uid = await authenticatedUid(request, env);
+  const body = await request.json() as { plan?: unknown };
+  if (body.plan !== "monthly" && body.plan !== "yearly") {
+    return json({ error: "INVALID_SUBSCRIPTION_PLAN" }, 400);
+  }
+
+  const accessToken = await firebaseAccessToken(env);
+  const entitlement = await firestoreGet(env, accessToken, uid);
+  // The introductory payment must have been verified and its 30-day access period
+  // must have ended before a recurring plan can be created.
+  const subUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/subscriptions/${encodeURIComponent(uid)}`;
+  const subResponse = await fetch(subUrl, { headers: { authorization: `Bearer ${accessToken}` } });
+  if (!subResponse.ok) return json({ error: "INTRO_SUBSCRIPTION_REQUIRED" }, 403);
+  const subDoc = await subResponse.json() as { fields?: Record<string, { stringValue?: string; integerValue?: string }> };
+  const subFields = subDoc.fields ?? {};
+  const currentPlan = subFields.plan?.stringValue;
+  const currentStatus = subFields.status?.stringValue;
+  const expiresAt = Number(subFields.expiresAt?.integerValue ?? 0);
+  if (currentPlan !== "intro" || currentStatus !== "active" || !expiresAt || Date.now() < expiresAt) {
+    return json({ error: "INTRO_PERIOD_NOT_FINISHED" }, 403);
+  }
+
+  const planId = body.plan === "monthly" ? env.RAZORPAY_MONTHLY_PLAN_ID : env.RAZORPAY_YEARLY_PLAN_ID;
+  if (!planId || planId.startsWith("REPLACE_")) return json({ error: "PLAN_NOT_CONFIGURED" }, 503);
+  const totalCount = body.plan === "monthly" ? 120 : 10;
+  const created = await razorpayRequest(env, "/subscriptions", "POST", {
+    plan_id: planId,
+    total_count: totalCount,
+    quantity: 1,
+    customer_notify: 1,
+    notes: { firebase_uid: uid, app: "APS_TOOLS", selected_plan: body.plan },
+  }) as { id?: string; short_url?: string; status?: string };
+  if (!created.id || !created.short_url) throw new Error("SUBSCRIPTION_CREATE_FAILED");
+
+  await firestorePatch(env, accessToken, `subscriptionRequests/${encodeURIComponent(created.id)}`, {
+    uid, subscriptionId: created.id, plan: body.plan, planId,
+    status: "created", createdAt: Date.now(),
+  });
+  return json({ subscriptionId: created.id, shortUrl: created.short_url, status: created.status ?? "created" });
+}
+
 async function webhook(request: Request, env: Env): Promise<Response> {
   const raw = await request.text();
   const supplied = request.headers.get("x-razorpay-signature") ?? "";
@@ -267,6 +310,7 @@ export default {
       if (request.method === "GET" && url.pathname === "/health") return json({ ok: true, service: "aps-tools-payment" });
       if (request.method === "POST" && url.pathname === "/orders") return await createOrder(request, env);
       if (request.method === "POST" && url.pathname === "/verify") return await verifyPayment(request, env);
+      if (request.method === "POST" && url.pathname === "/subscriptions/create") return await createSubscription(request, env);
       if (request.method === "POST" && url.pathname === "/webhook/razorpay") return await webhook(request, env);
       return json({ error: "NOT_FOUND" }, 404);
     } catch (error) {
