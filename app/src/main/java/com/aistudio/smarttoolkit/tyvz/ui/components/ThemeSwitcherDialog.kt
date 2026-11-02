@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,19 +93,7 @@ fun ThemeSwitcherDialog(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Theme Mode Selection Cards
-                ThemeOptionItem(
-                    title = "System Default",
-                    subtitle = "Matches device light / dark setting",
-                    icon = Icons.Default.SettingsBrightness,
-                    isSelected = currentMode == ThemeMode.SYSTEM,
-                    onClick = {
-                        HapticUtils.performClick(context)
-                        preferencesManager.setThemeMode(ThemeMode.SYSTEM)
-                    },
-                    testTag = "theme_option_system"
-                )
-
+                // Only manual Light and Dark choices are shown.
                 ThemeOptionItem(
                     title = "Light Mode",
                     subtitle = "Clean, high-clarity daylight theme",
