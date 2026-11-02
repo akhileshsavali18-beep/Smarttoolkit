@@ -2,6 +2,8 @@ export interface Env {
   FIREBASE_PROJECT_ID: string;
   FIREBASE_WEB_API_KEY: string;
   RAZORPAY_KEY_ID: string;
+  RAZORPAY_MONTHLY_PLAN_ID: string;
+  RAZORPAY_YEARLY_PLAN_ID: string;
   RAZORPAY_KEY_SECRET: string;
   RAZORPAY_WEBHOOK_SECRET: string;
   FIREBASE_SERVICE_ACCOUNT_EMAIL: string;
@@ -160,7 +162,7 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   const uid = await authenticatedUid(request, env);
   const body = await request.json() as { plan?: unknown };
   const plan = planFrom(body.plan);
-  if (!plan) return json({ error: "INVALID_PLAN" }, 400);
+  if (plan !== "intro") return json({ error: "ONLY_INTRO_ORDER_ALLOWED" }, 400);
 
   const accessToken = await firebaseAccessToken(env);
   const existing = await firestoreGet(env, accessToken, uid);
