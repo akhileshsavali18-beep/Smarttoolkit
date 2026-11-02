@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
       }
     }
 
+    // PRO access is read from the server-owned Firebase entitlement document.
+    BillingManager.getInstance(applicationContext).startServerEntitlementSync()
+
     lifecycleScope.launch(Dispatchers.IO) {
       initBillingClient()
     }
