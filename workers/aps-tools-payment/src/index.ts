@@ -240,7 +240,6 @@ async function createSubscription(request: Request, env: Env): Promise<Response>
   }
 
   const accessToken = await firebaseAccessToken(env);
-  const entitlement = await firestoreGet(env, accessToken, uid);
   // The introductory payment must have been verified and its 30-day access period
   // must have ended before a recurring plan can be created.
   const subUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/subscriptions/${encodeURIComponent(uid)}`;
