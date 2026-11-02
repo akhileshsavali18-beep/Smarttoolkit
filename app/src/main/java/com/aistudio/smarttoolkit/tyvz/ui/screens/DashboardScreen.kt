@@ -320,6 +320,7 @@ fun DashboardScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val isPremium by billingManager.isPremium.collectAsState()
     val preferencesManager = remember { AppPreferencesManager.getInstance(context) }
     val favoriteScreens by preferencesManager.favoriteTools.collectAsState()
     val recentScreenNames by preferencesManager.recentTools.collectAsState()
@@ -1068,7 +1069,7 @@ fun DashboardScreen(
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Sticky Banner Ad (hidden for PRO users)
                 StickyBannerAd(
-                    isPremium = false,
+                    isPremium = isPremium,
                     modifier = Modifier.testTag("sticky_banner_ad")
                 )
 
