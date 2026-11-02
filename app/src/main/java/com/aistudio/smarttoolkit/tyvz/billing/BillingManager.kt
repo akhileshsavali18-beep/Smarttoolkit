@@ -14,6 +14,10 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuth.AuthStateListener
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,9 +53,11 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    // Play Billing is the source of truth. Premium starts as false until
-    // Google Play confirms an active PURCHASED subscription.
+    // PRO access is granted only by the server-written Firestore entitlement.
+    // Google Play purchase callbacks must never grant access in this Razorpay flow.
     private val _isPremium = MutableStateFlow(false)
+    private var entitlementListener: ListenerRegistration? = null
+    private var authStateListener: AuthStateListener? = null
     val isPremium: StateFlow<Boolean> = _isPremium.asStateFlow()
 
     private val _premiumProductDetails = MutableStateFlow<ProductDetails?>(null)
@@ -71,6 +77,32 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
     init {
         startConnection()
+    }
+
+    /** Observe the server-owned subscriptions/{uid} record. Client writes are denied by Firestore rules. */
+    fun startServerEntitlementSync() {
+        if (authStateListener != null) return
+        val auth = FirebaseAuth.getInstance()
+        authStateListener = AuthStateListener { firebaseAuth ->
+            entitlementListener?.remove()
+            entitlementListener = null
+            _isPremium.value = false
+            val uid = firebaseAuth.currentUser?.uid ?: return@AuthStateListener
+            entitlementListener = FirebaseFirestore.getInstance()
+                .collection("subscriptions")
+                .document(uid)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Log.w(TAG, "Unable to read server subscription entitlement", error)
+                        _isPremium.value = false
+                        return@addSnapshotListener
+                    }
+                    val status = snapshot?.getString("status")
+                    val expiresAt = snapshot?.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                    _isPremium.value = status == "active" && expiresAt > System.currentTimeMillis()
+                }
+        }
+        auth.addAuthStateListener(authStateListener!!)
     }
 
     fun startConnection() {
@@ -200,8 +232,6 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
                             purchase.purchaseState == Purchase.PurchaseState.PURCHASED
                 }
 
-                setPremiumState(activePremium)
-
                 // Acknowledge any purchased subscription that has not been acknowledged.
                 purchases
                     .filter {
@@ -293,7 +323,8 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
         if (!purchase.products.contains(PRODUCT_PRO)) return
 
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-            setPremiumState(true)
+            // Retain the Play Billing acknowledgement implementation for a future Play release.
+            // Entitlement is not granted here; the server-owned Firestore record is authoritative.
             acknowledgeIfNeeded(purchase)
         }
     }
@@ -317,10 +348,6 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
                 }
             }
         }
-    }
-
-    private fun setPremiumState(isPremium: Boolean) {
-        _isPremium.value = isPremium
     }
 
     fun clearStatusMessage() {
