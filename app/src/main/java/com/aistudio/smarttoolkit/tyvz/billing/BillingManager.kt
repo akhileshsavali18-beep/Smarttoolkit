@@ -98,7 +98,7 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
                         return@addSnapshotListener
                     }
                     val status = snapshot?.getString("status")
-                    val expiresAt = snapshot?.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                    val expiresAt = snapshot?.getLong("expiresAt") ?: snapshot?.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                     _isPremium.value = status == "active" && expiresAt > System.currentTimeMillis()
                 }
         }
