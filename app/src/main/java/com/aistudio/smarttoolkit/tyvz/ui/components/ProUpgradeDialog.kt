@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.aistudio.smarttoolkit.tyvz.billing.BillingManager
+import com.aistudio.smarttoolkit.tyvz.billing.RazorpayPaymentApi
 import com.aistudio.smarttoolkit.tyvz.billing.BillingManager.SubscriptionPlan
 import com.aistudio.smarttoolkit.tyvz.ui.theme.ApsBlue
 import com.aistudio.smarttoolkit.tyvz.ui.theme.ProGold
@@ -65,6 +67,16 @@ fun ProUpgradeDialog(
     val activity = context as? Activity
     val isPremium by billingManager.isPremium.collectAsState()
     val billingStatus by billingManager.billingStatusMessage.collectAsState()
+    var introExpired by remember { mutableStateOf(false) }
+    var subscriptionChecked by remember { mutableStateOf(false) }
+    var hasServerSubscription by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        runCatching { RazorpayPaymentApi.getSubscriptionStatus() }.onSuccess { status ->
+            introExpired = status.introExpired
+            hasServerSubscription = status.hasSubscription
+        }
+        subscriptionChecked = true
+    }
 
     Dialog(onDismissRequest = onDismissRequest) {
         Card(
@@ -139,56 +151,26 @@ fun ProUpgradeDialog(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 if (!isPremium) {
-                    Text(
-                        text = "₹9 for 30 days",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black,
-                        color = ApsBlue
-                    )
-                    Text(
-                        text = "One-time introductory payment. No automatic renewal.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(
-                        onClick = onStartIntroPayment,
-                        colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp).testTag("buy_pro_button")
-                    ) {
-                        Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Pay ₹9 with Razorpay", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "30 ದಿನಗಳ ನಂತರ ನೀವು ಸ್ವತಃ ₹99 ಮಾಸಿಕ ಅಥವಾ ₹799 ವಾರ್ಷಿಕ ಯೋಜನೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಬಹುದು. ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಹಣ ಕಡಿತವಾಗುವುದಿಲ್ಲ.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "ಪರಿಚಯಾತ್ಮಕ ಅವಧಿ ಮುಗಿದ ನಂತರ ಮಾತ್ರ ಮುಂದಿನ ಯೋಜನೆ ಸಕ್ರಿಯವಾಗುತ್ತದೆ.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Button(
-                            onClick = { onStartSubscriptionPayment("monthly") },
-                            colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) { Text("₹99 / ತಿಂಗಳು", fontWeight = FontWeight.Bold) }
-                        Button(
-                            onClick = { onStartSubscriptionPayment("yearly") },
-                            colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) { Text("₹799 / ವರ್ಷ", fontWeight = FontWeight.Bold) }
+                    if (!hasServerSubscription) {
+                        Text(text = "₹9 for 30 days", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = ApsBlue)
+                        Text(text = "One-time introductory payment. No automatic renewal.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = onStartIntroPayment, colors = ButtonDefaults.buttonColors(containerColor = ApsBlue), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().height(50.dp).testTag("buy_pro_button")) {
+                            Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Pay ₹9 with Razorpay", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "30 ದಿನಗಳ ನಂತರ ನೀವು ಸ್ವತಃ ₹99 ಮಾಸಿಕ ಅಥವಾ ₹799 ವಾರ್ಷಿಕ ಯೋಜನೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಬಹುದು. ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಹಣ ಕಡಿತವಾಗುವುದಿಲ್ಲ.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                    } else if (introExpired) {
+                        Text(text = "ಪರಿಚಯಾತ್ಮಕ ಅವಧಿ ಮುಗಿದಿದೆ. ಮುಂದಿನ ಯೋಜನೆಯನ್ನು ನೀವೇ ಆಯ್ಕೆಮಾಡಿ.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                            Button(onClick = { onStartSubscriptionPayment("monthly") }, colors = ButtonDefaults.buttonColors(containerColor = ApsBlue), shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f)) { Text("₹99 / ತಿಂಗಳು", fontWeight = FontWeight.Bold) }
+                            Button(onClick = { onStartSubscriptionPayment("yearly") }, colors = ButtonDefaults.buttonColors(containerColor = ApsBlue), shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f)) { Text("₹799 / ವರ್ಷ", fontWeight = FontWeight.Bold) }
+                        }
+                    } else {
+                        Text(text = if (subscriptionChecked) "ನಿಮ್ಮ ಪರಿಚಯಾತ್ಮಕ PRO ಅವಧಿ ಇನ್ನೂ ಸಕ್ರಿಯವಾಗಿದೆ. ಅವಧಿ ಮುಗಿದ ನಂತರವೇ ಮುಂದಿನ ಯೋಜನೆ ಆಯ್ಕೆ ಮಾಡಬಹುದು." else "ನಿಮ್ಮ ಚಂದಾದಾರಿಕೆ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                     }
                     if (billingStatus != null) {
                         Spacer(modifier = Modifier.height(8.dp))
