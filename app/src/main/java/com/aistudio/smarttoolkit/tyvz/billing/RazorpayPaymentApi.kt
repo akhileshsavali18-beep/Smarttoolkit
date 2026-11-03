@@ -30,6 +30,7 @@ object RazorpayPaymentApi {
 
     data class IntroOrder(val orderId: String, val amount: Int, val currency: String, val keyId: String)
     data class SubscriptionCheckout(val subscriptionId: String, val keyId: String, val shortUrl: String)
+    data class SubscriptionStatus(val hasSubscription: Boolean, val introExpired: Boolean, val status: String, val plan: String, val expiresAt: Long)
 
     private fun endpoint(path: String): String {
         val base = BuildConfig.PAYMENT_API_BASE_URL.trim().trimEnd('/')
@@ -68,6 +69,18 @@ object RazorpayPaymentApi {
             throw IOException("ಸರ್ವರ್‌ನಿಂದ ಬಂದ ಪಾವತಿ ವಿವರಗಳು ಸರಿಯಾಗಿಲ್ಲ.")
         }
         IntroOrder(orderId, amount, currency, keyId)
+    }
+
+    suspend fun getSubscriptionStatus(): SubscriptionStatus = withContext(Dispatchers.IO) {
+        val token = firebaseIdToken()
+        val response = execute("/subscription/status", token, JSONObject())
+        SubscriptionStatus(
+            response.optBoolean("hasSubscription", false),
+            response.optBoolean("introExpired", false),
+            response.optString("status", "none"),
+            response.optString("plan", "none"),
+            response.optLong("expiresAt", 0L)
+        )
     }
 
     suspend fun createSubscription(plan: String): SubscriptionCheckout = withContext(Dispatchers.IO) {
