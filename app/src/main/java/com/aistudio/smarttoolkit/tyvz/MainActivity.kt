@@ -37,7 +37,8 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
       try {
         val order = RazorpayPaymentApi.createIntroOrder()
         Checkout.preload(applicationContext)
-        Checkout.setKeyID(order.keyId)
+        val checkout = Checkout()
+        checkout.setKeyID(order.keyId)
         val options = JSONObject().apply {
           put("name", "APS TOOLS")
           put("description", "APS TOOLS PRO - 30 days")
@@ -47,7 +48,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
           put("theme", JSONObject().put("color", "#2563EB"))
           put("prefill", JSONObject())
         }
-        Checkout.open(this@MainActivity, options)
+        checkout.open(this@MainActivity, options)
       } catch (error: Throwable) {
         Toast.makeText(this@MainActivity, error.message ?: "ಪಾವತಿ ಆರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.", Toast.LENGTH_LONG).show()
       }
