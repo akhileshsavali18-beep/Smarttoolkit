@@ -391,7 +391,7 @@ async function createSubscription(request: Request, env: Env): Promise<Response>
     uid, subscriptionId: created.id, plan: body.plan, planId,
     status: "created", createdAt: Date.now(),
   });
-  return json({ subscriptionId: created.id, shortUrl: created.short_url, status: created.status ?? "created" });
+  return json({ subscriptionId: created.id, shortUrl: created.short_url, keyId: env.RAZORPAY_KEY_ID, status: created.status ?? "created" });
 }
 
 async function webhook(request: Request, env: Env): Promise<Response> {
