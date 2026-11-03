@@ -1,0 +1,7 @@
+allprojects {
+    afterEvaluate {
+        if (project.path == ":app") {
+            dependencies.add("implementation", "com.razorpay:checkout:1.6.41")
+        }
+    }
+}
