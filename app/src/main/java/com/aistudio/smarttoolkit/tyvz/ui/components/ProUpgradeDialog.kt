@@ -57,18 +57,13 @@ import com.aistudio.smarttoolkit.tyvz.ui.theme.ProGoldBg
 @Composable
 fun ProUpgradeDialog(
     billingManager: BillingManager,
+    onStartIntroPayment: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
     val isPremium by billingManager.isPremium.collectAsState()
-    val productDetails by billingManager.premiumProductDetails.collectAsState()
     val billingStatus by billingManager.billingStatusMessage.collectAsState()
-    var selectedPlan by remember { mutableStateOf(SubscriptionPlan.MONTHLY) }
-
-    val monthlyPrice = billingManager.getPlanPriceText(SubscriptionPlan.MONTHLY)
-    val yearlyPrice = billingManager.getPlanPriceText(SubscriptionPlan.YEARLY)
-    val monthlyIntroPrice = billingManager.getMonthlyIntroPriceText()
 
     Dialog(onDismissRequest = onDismissRequest) {
         Card(
@@ -144,70 +139,38 @@ fun ProUpgradeDialog(
 
                 if (!isPremium) {
                     Text(
-                        text = "Choose your plan",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth()
+                        text = "₹9 for 30 days",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Black,
+                        color = ApsBlue
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    PlanCard(
-                        title = "Monthly",
-                        price = monthlyPrice ?: "Available in Google Play",
-                        detail = monthlyIntroPrice?.let { "$it for the first month • then ${monthlyPrice ?: "regular price"}/month" }
-                            ?: "Monthly subscription",
-                        selected = selectedPlan == SubscriptionPlan.MONTHLY,
-                        onClick = { selectedPlan = SubscriptionPlan.MONTHLY },
-                        testTag = "monthly_plan"
+                    Text(
+                        text = "One-time introductory payment. No automatic renewal.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
                     )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    PlanCard(
-                        title = "Yearly",
-                        price = yearlyPrice ?: "Available in Google Play",
-                        detail = "Yearly subscription",
-                        selected = selectedPlan == SubscriptionPlan.YEARLY,
-                        onClick = { selectedPlan = SubscriptionPlan.YEARLY },
-                        testTag = "yearly_plan"
-                    )
-
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Button(
-                        onClick = {
-                            activity?.let { billingManager.launchBillingFlow(it, selectedPlan) }
-                        },
-                        enabled = productDetails != null && activity != null,
+                        onClick = onStartIntroPayment,
                         colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
                         shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .testTag("buy_pro_button")
+                        modifier = Modifier.fillMaxWidth().height(50.dp).testTag("buy_pro_button")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.WorkspacePremium,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (selectedPlan == SubscriptionPlan.MONTHLY) "Continue with Monthly" else "Continue with Yearly",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
+                        Text("Pay ₹9 with Razorpay", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
-
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "30 ದಿನಗಳ ನಂತರ ನೀವು ಸ್ವತಃ ₹99 ಮಾಸಿಕ ಅಥವಾ ₹799 ವಾರ್ಷಿಕ ಯೋಜನೆಯನ್ನು ಆಯ್ಕೆ ಮಾಡಬಹುದು. ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಹಣ ಕಡಿತವಾಗುವುದಿಲ್ಲ.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
                     if (billingStatus != null) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = billingStatus.orEmpty(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center
-                        )
+                        Text(text = billingStatus.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                     }
                 } else {
                     Card(
