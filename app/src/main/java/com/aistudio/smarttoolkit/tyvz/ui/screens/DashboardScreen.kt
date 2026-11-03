@@ -1213,6 +1213,7 @@ fun DashboardScreen(
             onStartIntroPayment = { (context as? android.app.Activity)?.let { activity ->
                 (activity as? com.aistudio.smarttoolkit.tyvz.MainActivity)?.startIntroPayment()
             } },
+            onStartSubscriptionPayment = { plan -> (context as? com.aistudio.smarttoolkit.tyvz.MainActivity)?.startSubscriptionPayment(plan) },
             onDismissRequest = { showProDialog = false }
         )
     }
