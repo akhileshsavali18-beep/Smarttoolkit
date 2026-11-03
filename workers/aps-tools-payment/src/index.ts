@@ -183,14 +183,23 @@ async function firestoreCommitOnce(
   };
   const documentName = (path: string) =>
     `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`;
+  const toWrite = (path: string, values: Record<string, unknown>, createOnly = false) => {
+    const fields = encodeFields(values);
+    const write: Record<string, unknown> = {
+      update: { name: documentName(path), fields },
+    };
+    if (createOnly) {
+      write.currentDocument = { exists: false };
+    } else {
+      // Patch only fields owned by this payment flow; preserve unrelated
+      // profile, entitlement metadata, and fields written by other services.
+      write.updateMask = { fieldPaths: Object.keys(fields) };
+    }
+    return write;
+  };
   const writes = [
-    ...updates.map(item => ({
-      update: { name: documentName(item.path), fields: encodeFields(item.fields) },
-    })),
-    {
-      update: { name: documentName(claimPath), fields: encodeFields(claimFields) },
-      currentDocument: { exists: false },
-    },
+    ...updates.map(item => toWrite(item.path, item.fields)),
+    toWrite(claimPath, claimFields, true),
   ];
   const response = await fetch(
     `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:commit`,
