@@ -1210,6 +1210,9 @@ fun DashboardScreen(
     if (showProDialog) {
         ProUpgradeDialog(
             billingManager = billingManager,
+            onStartIntroPayment = { (context as? android.app.Activity)?.let { activity ->
+                (activity as? com.aistudio.smarttoolkit.tyvz.MainActivity)?.startIntroPayment()
+            } },
             onDismissRequest = { showProDialog = false }
         )
     }
