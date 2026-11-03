@@ -66,7 +66,7 @@ async function verifyFirebaseIdToken(token: string, env: Env): Promise<string> {
   if (!response.ok) throw new Error("UNAUTHORIZED");
   const data = await response.json() as { users?: Array<{ localId?: string; emailVerified?: boolean; disabled?: boolean }> };
   const user = data.users?.[0];
-  if (!user?.localId || user.disabled) throw new Error("UNAUTHORIZED");
+  if (!user?.localId || user.disabled || user.emailVerified !== true) throw new Error("UNAUTHORIZED");
   return user.localId;
 }
 
@@ -239,6 +239,24 @@ export function planFrom(value: unknown): Plan | null {
   return value === "intro" || value === "monthly" || value === "yearly" ? value : null;
 }
 
+export function isCapturedPayment(payment: {
+  order_id?: string;
+  status?: string;
+  amount?: number;
+  currency?: string;
+}, expected: { orderId: string; amount: number }): boolean {
+  return payment.order_id === expected.orderId &&
+    payment.status === "captured" &&
+    payment.amount === expected.amount &&
+    payment.currency === "INR";
+}
+
+export function isValidSubscriptionPeriod(currentEndMs: number, nowMs: number): boolean {
+  return Number.isFinite(currentEndMs) && currentEndMs > nowMs;
+}
+
+
+
 async function createOrder(request: Request, env: Env): Promise<Response> {
   const uid = await authenticatedUid(request, env);
   const body = await request.json() as { plan?: unknown };
@@ -306,8 +324,7 @@ async function verifyPayment(request: Request, env: Env): Promise<Response> {
   const payment = await razorpayRequest(env, `/payments/${encodeURIComponent(paymentId)}`, "GET") as {
     id: string; order_id: string; status: string; amount: number; currency: string;
   };
-  if (payment.order_id !== orderId || payment.status !== "captured" ||
-      payment.amount !== Number(record.amount) || payment.currency !== "INR") {
+  if (!isCapturedPayment(payment, { orderId, amount: Number(record.amount) })) {
     return json({ error: "PAYMENT_NOT_CAPTURED" }, 400);
   }
 
@@ -440,7 +457,7 @@ async function webhook(request: Request, env: Env): Promise<Response> {
     event.event === "subscription.paused" ||
     event.event === "subscription.completed";
 
-  if (activated && current.status === "active" && (!currentEnd || currentEnd <= now)) {
+  if (activated && current.status === "active" && !isValidSubscriptionPeriod(currentEnd, now)) {
     return json({ error: "INVALID_SUBSCRIPTION_PERIOD" }, 400);
   }
   const subscriptionUpdate: { path: string; fields: Record<string, unknown> }[] = [];
