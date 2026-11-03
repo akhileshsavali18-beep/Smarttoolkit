@@ -82,7 +82,7 @@ async function firebaseAccessToken(env: Env): Promise<string> {
   })));
   const unsigned = header + "." + claim;
   const key = await crypto.subtle.importKey(
-    "pkcs8", pemToBytes(env.FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY),
+    "pkcs8", pemToBytes(env.FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY).buffer as ArrayBuffer,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]
   );
   const signature = new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned)));
