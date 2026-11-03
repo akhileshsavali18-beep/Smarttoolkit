@@ -151,7 +151,7 @@ fun ProUpgradeDialog(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 if (!isPremium) {
-                    if (!hasServerSubscription) {
+                    if (subscriptionChecked && !hasServerSubscription) {
                         Text(text = "₹9 for 30 days", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = ApsBlue)
                         Text(text = "One-time introductory payment. No automatic renewal.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(12.dp))
@@ -170,7 +170,7 @@ fun ProUpgradeDialog(
                             Button(onClick = { onStartSubscriptionPayment("yearly") }, colors = ButtonDefaults.buttonColors(containerColor = ApsBlue), shape = RoundedCornerShape(12.dp), modifier = Modifier.weight(1f)) { Text("₹799 / ವರ್ಷ", fontWeight = FontWeight.Bold) }
                         }
                     } else {
-                        Text(text = if (subscriptionChecked) "ನಿಮ್ಮ ಪರಿಚಯಾತ್ಮಕ PRO ಅವಧಿ ಇನ್ನೂ ಸಕ್ರಿಯವಾಗಿದೆ. ಅವಧಿ ಮುಗಿದ ನಂತರವೇ ಮುಂದಿನ ಯೋಜನೆ ಆಯ್ಕೆ ಮಾಡಬಹುದು." else "ನಿಮ್ಮ ಚಂದಾದಾರಿಕೆ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                        Text(text = if (subscriptionChecked && hasServerSubscription) "ನಿಮ್ಮ ಪರಿಚಯಾತ್ಮಕ PRO ಅವಧಿ ಇನ್ನೂ ಸಕ್ರಿಯವಾಗಿದೆ. ಅವಧಿ ಮುಗಿದ ನಂತರವೇ ಮುಂದಿನ ಯೋಜನೆ ಆಯ್ಕೆ ಮಾಡಬಹುದು." else if (subscriptionChecked) "ಚಂದಾದಾರಿಕೆ ಸ್ಥಿತಿ ಪರಿಶೀಲಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ." else "ನಿಮ್ಮ ಚಂದಾದಾರಿಕೆ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                     }
                     if (billingStatus != null) {
                         Spacer(modifier = Modifier.height(8.dp))
