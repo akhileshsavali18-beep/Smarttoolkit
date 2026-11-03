@@ -19,7 +19,7 @@ android {
     targetSdk = 36
     versionCode = 10
     versionName = "2.8"
-    buildConfigField("String", "PAYMENT_API_BASE_URL", "\"\")
+    buildConfigField("String", "PAYMENT_API_BASE_URL", "\"\"")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
