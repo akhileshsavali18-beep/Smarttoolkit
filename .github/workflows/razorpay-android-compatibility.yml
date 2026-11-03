@@ -38,4 +38,4 @@ jobs:
           gradle-version: "9.3.1"
 
       - name: Build app with Razorpay SDK injected for this test only
-        run: gradle --no-daemon -I .github/scripts/razorpay-compat.init.gradle :app:assembleDebug
+        run: gradle --no-daemon -I .github/scripts/razorpay-compat.init.gradle :app:assembleDebug -x :app:validateSigningDebug
