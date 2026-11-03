@@ -165,6 +165,47 @@ async function firestoreCreateOnce(
   throw new Error("FIRESTORE_EVENT_WRITE_FAILED");
 }
 
+async function firestoreCommitOnce(
+  env: Env,
+  token: string,
+  claimPath: string,
+  claimFields: Record<string, unknown>,
+  updates: Array<{ path: string; fields: Record<string, unknown> }>
+): Promise<boolean> {
+  const encodeFields = (values: Record<string, unknown>) => {
+    const fields: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(values)) {
+      if (typeof value === "string") fields[key] = { stringValue: value };
+      else if (typeof value === "number" && Number.isFinite(value)) fields[key] = { integerValue: String(Math.trunc(value)) };
+      else if (typeof value === "boolean") fields[key] = { booleanValue: value };
+    }
+    return fields;
+  };
+  const documentName = (path: string) =>
+    `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`;
+  const writes = [
+    ...updates.map(item => ({
+      update: { name: documentName(item.path), fields: encodeFields(item.fields) },
+    })),
+    {
+      update: { name: documentName(claimPath), fields: encodeFields(claimFields) },
+      currentDocument: { exists: false },
+    },
+  ];
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:commit`,
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ writes }),
+    }
+  );
+  if (response.ok) return true;
+  const detail = await response.text();
+  if (response.status === 400 && /ALREADY_EXISTS|exists:\\s*false|precondition/i.test(detail)) return false;
+  throw new Error("FIRESTORE_ATOMIC_COMMIT_FAILED");
+}
+
 async function razorpayRequest(env: Env, path: string, method: string, body?: unknown): Promise<any> {
   const auth = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`);
   const response = await fetch(`https://api.razorpay.com/v1${path}`, {
@@ -265,14 +306,23 @@ async function verifyPayment(request: Request, env: Env): Promise<Response> {
   if (!plan) return json({ error: "INVALID_ORDER_PLAN" }, 400);
   const now = Date.now();
   const expiresAt = now + (plan === "intro" ? 30 : plan === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000;
-  await firestorePatch(env, accessToken, `subscriptions/${encodeURIComponent(uid)}`, {
-    uid, status: "active", plan, paymentId, orderId,
-    startedAt: now, expiresAt, updatedAt: now, source: "razorpay",
-  });
-  await firestorePatch(env, accessToken, `paymentOrders/${encodeURIComponent(uid)}`, {
-    uid, orderId, plan, amount: Number(record.amount), paymentId, paymentStatus: "captured",
-    createdAt: Number(record.createdAt), verifiedAt: now,
-  });
+  const committed = await firestoreCommitOnce(
+    env,
+    accessToken,
+    `paymentVerificationClaims/${encodeURIComponent(orderId)}`,
+    { uid, orderId, paymentId, claimedAt: now },
+    [
+      {
+        path: `subscriptions/${encodeURIComponent(uid)}`,
+        fields: { uid, status: "active", plan, paymentId, orderId, startedAt: now, expiresAt, updatedAt: now, source: "razorpay" },
+      },
+      {
+        path: `paymentOrders/${encodeURIComponent(uid)}`,
+        fields: { uid, orderId, plan, amount: Number(record.amount), paymentId, paymentStatus: "captured", createdAt: Number(record.createdAt), verifiedAt: now },
+      },
+    ]
+  );
+  if (!committed) return json({ error: "PAYMENT_ALREADY_VERIFIED" }, 409);
   return json({ verified: true, status: "active", expiresAt });
 }
 
@@ -381,38 +431,39 @@ async function webhook(request: Request, env: Env): Promise<Response> {
     event.event === "subscription.paused" ||
     event.event === "subscription.completed";
 
-  // Atomically claim the event ID before mutating entitlements. Only the first
-  // delivery can proceed; concurrent/replayed deliveries are acknowledged as duplicates.
-  const firstDelivery = await firestoreCreateOnce(env, accessToken, `razorpayWebhookEvents/${encodeURIComponent(eventId)}`, {
-    eventId, event: event.event, subscriptionId, uid, state: "processing", receivedAt: now,
-  });
-  if (!firstDelivery) {
-    return json({ received: true, duplicate: true, event: event.event });
+  if (activated && current.status === "active" && (!currentEnd || currentEnd <= now)) {
+    return json({ error: "INVALID_SUBSCRIPTION_PERIOD" }, 400);
   }
-
+  const subscriptionUpdate: { path: string; fields: Record<string, unknown> }[] = [];
   if (activated && current.status === "active") {
-    if (!currentEnd || currentEnd <= now) {
-      return json({ error: "INVALID_SUBSCRIPTION_PERIOD" }, 400);
-    }
-    await firestorePatch(env, accessToken, `subscriptions/${encodeURIComponent(uid)}`, {
-      uid, status: "active", plan, razorpaySubscriptionId: subscriptionId,
-      planId: current.plan_id ?? "", startedAt: now, expiresAt: currentEnd,
-      paidCount: Number(current.paid_count ?? 0), updatedAt: now,
-      source: "razorpay_subscription",
+    subscriptionUpdate.push({
+      path: `subscriptions/${encodeURIComponent(uid)}`,
+      fields: {
+        uid, status: "active", plan, razorpaySubscriptionId: subscriptionId,
+        planId: current.plan_id ?? "", startedAt: now, expiresAt: currentEnd,
+        paidCount: Number(current.paid_count ?? 0), updatedAt: now,
+        source: "razorpay_subscription",
+      },
     });
   } else if (terminal) {
-    // Keep the actual gateway state. The app must fail closed unless status is active.
-    await firestorePatch(env, accessToken, `subscriptions/${encodeURIComponent(uid)}`, {
-      uid, status: current.status ?? "inactive", plan,
-      razorpaySubscriptionId: subscriptionId,
-      planId: current.plan_id ?? "", paidCount: Number(current.paid_count ?? 0),
-      updatedAt: now, source: "razorpay_subscription",
+    subscriptionUpdate.push({
+      path: `subscriptions/${encodeURIComponent(uid)}`,
+      fields: {
+        uid, status: current.status ?? "inactive", plan,
+        razorpaySubscriptionId: subscriptionId, planId: current.plan_id ?? "",
+        paidCount: Number(current.paid_count ?? 0), updatedAt: now,
+        source: "razorpay_subscription",
+      },
     });
   }
-
-  await firestorePatch(env, accessToken, `razorpayWebhookEvents/${encodeURIComponent(eventId)}`, {
-    eventId, event: event.event, subscriptionId, uid, state: "processed", processedAt: Date.now(),
-  });
+  const committed = await firestoreCommitOnce(
+    env,
+    accessToken,
+    `razorpayWebhookEvents/${encodeURIComponent(eventId)}`,
+    { eventId, event: event.event, subscriptionId, uid, state: "processed", receivedAt: now, processedAt: now },
+    subscriptionUpdate
+  );
+  if (!committed) return json({ received: true, duplicate: true, event: event.event });
   return json({ received: true, processed: true, duplicate: false, event: event.event });
 }
 
