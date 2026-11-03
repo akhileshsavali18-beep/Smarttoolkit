@@ -32,6 +32,32 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
+  private var pendingSubscriptionCheckout = false
+
+  fun startSubscriptionPayment(plan: String) {
+    if (plan != "monthly" && plan != "yearly") return
+    lifecycleScope.launch {
+      try {
+        val subscription = RazorpayPaymentApi.createSubscription(plan)
+        Checkout.preload(applicationContext)
+        val checkout = Checkout()
+        checkout.setKeyID(subscription.keyId)
+        val options = JSONObject().apply {
+          put("name", "APS TOOLS")
+          put("description", if (plan == "monthly") "APS TOOLS PRO - Monthly" else "APS TOOLS PRO - Yearly")
+          put("subscription_id", subscription.subscriptionId)
+          put("theme", JSONObject().put("color", "#2563EB"))
+          put("prefill", JSONObject())
+        }
+        pendingSubscriptionCheckout = true
+        checkout.open(this@MainActivity, options)
+      } catch (error: Throwable) {
+        pendingSubscriptionCheckout = false
+        Toast.makeText(this@MainActivity, error.message ?: "ಚಂದಾದಾರಿಕೆ ಆರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.", Toast.LENGTH_LONG).show()
+      }
+    }
+  }
+
   fun startIntroPayment() {
     lifecycleScope.launch {
       try {
@@ -56,6 +82,12 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
   }
 
   override fun onPaymentSuccess(paymentId: String?, paymentData: PaymentData?) {
+    if (pendingSubscriptionCheckout) {
+      pendingSubscriptionCheckout = false
+      BillingManager.getInstance(applicationContext).startServerEntitlementSync()
+      Toast.makeText(this, "ಪಾವತಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ. ಸರ್ವರ್ ದೃಢೀಕರಣದ ನಂತರ PRO ಸ್ಥಿತಿ ನವೀಕರಿಸಲಾಗುತ್ತದೆ.", Toast.LENGTH_LONG).show()
+      return
+    }
     lifecycleScope.launch {
       try {
         val orderId = paymentData?.orderId.orEmpty()
@@ -71,6 +103,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
   }
 
   override fun onPaymentError(code: Int, description: String?, paymentData: PaymentData?) {
+    pendingSubscriptionCheckout = false
     Toast.makeText(this, description ?: "ಪಾವತಿ ರದ್ದಾಗಿದೆ ಅಥವಾ ವಿಫಲವಾಗಿದೆ.", Toast.LENGTH_LONG).show()
   }
 
