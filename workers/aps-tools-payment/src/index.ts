@@ -353,6 +353,23 @@ async function verifyPayment(request: Request, env: Env): Promise<Response> {
 }
 
 
+async function subscriptionStatus(request: Request, env: Env): Promise<Response> {
+  const uid = await authenticatedUid(request, env);
+  const accessToken = await firebaseAccessToken(env);
+  const path = "https://firestore.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents/subscriptions/" + encodeURIComponent(uid);
+  const response = await fetch(path, { headers: { authorization: "Bearer " + accessToken } });
+  if (response.status === 404) return json({ hasSubscription: false, introExpired: false, status: "none", plan: "none", expiresAt: 0 });
+  if (!response.ok) throw new Error("FIRESTORE_READ_FAILED");
+  const doc = await response.json() as { fields?: Record<string, { stringValue?: string; integerValue?: string }> };
+  const fields = doc.fields ?? {};
+  const plan = fields.plan?.stringValue ?? "none";
+  const status = fields.status?.stringValue ?? "inactive";
+  const expiresAt = Number(fields.expiresAt?.integerValue ?? 0);
+  const introExpired = plan === "intro" && status === "active" && expiresAt > 0 && Date.now() >= expiresAt;
+  return json({ hasSubscription: plan !== "none", introExpired, status, plan, expiresAt });
+}
+
+
 async function createSubscription(request: Request, env: Env): Promise<Response> {
   const uid = await authenticatedUid(request, env);
   const body = await request.json() as { plan?: unknown };
@@ -508,6 +525,7 @@ export default {
       if (request.method === "GET" && url.pathname === "/health") return json({ ok: true, service: "aps-tools-payment" });
       if (request.method === "POST" && url.pathname === "/orders") return await createOrder(request, env);
       if (request.method === "POST" && url.pathname === "/verify") return await verifyPayment(request, env);
+      if (request.method === "POST" && url.pathname === "/subscription/status") return await subscriptionStatus(request, env);
       if (request.method === "POST" && url.pathname === "/subscriptions/create") return await createSubscription(request, env);
       if (request.method === "POST" && url.pathname === "/webhook/razorpay") return await webhook(request, env);
       return json({ error: "NOT_FOUND" }, 404);
