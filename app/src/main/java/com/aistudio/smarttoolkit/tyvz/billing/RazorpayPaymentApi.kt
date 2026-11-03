@@ -29,6 +29,7 @@ object RazorpayPaymentApi {
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
     data class IntroOrder(val orderId: String, val amount: Int, val currency: String, val keyId: String)
+    data class SubscriptionCheckout(val subscriptionId: String, val keyId: String, val shortUrl: String)
 
     private fun endpoint(path: String): String {
         val base = BuildConfig.PAYMENT_API_BASE_URL.trim().trimEnd('/')
@@ -67,6 +68,19 @@ object RazorpayPaymentApi {
             throw IOException("ಸರ್ವರ್‌ನಿಂದ ಬಂದ ಪಾವತಿ ವಿವರಗಳು ಸರಿಯಾಗಿಲ್ಲ.")
         }
         IntroOrder(orderId, amount, currency, keyId)
+    }
+
+    suspend fun createSubscription(plan: String): SubscriptionCheckout = withContext(Dispatchers.IO) {
+        require(plan == "monthly" || plan == "yearly") { "ಅಮಾನ್ಯ ಚಂದಾದಾರಿಕೆ ಯೋಜನೆ." }
+        val token = firebaseIdToken()
+        val response = execute("/subscriptions/create", token, JSONObject().put("plan", plan))
+        val subscriptionId = response.optString("subscriptionId")
+        val keyId = response.optString("keyId")
+        val shortUrl = response.optString("shortUrl")
+        if (subscriptionId.isBlank() || keyId.isBlank()) {
+            throw IOException("ಸರ್ವರ್‌ನಿಂದ ಚಂದಾದಾರಿಕೆ ವಿವರಗಳು ಸರಿಯಾಗಿ ಬಂದಿಲ್ಲ.")
+        }
+        SubscriptionCheckout(subscriptionId, keyId, shortUrl)
     }
 
     suspend fun verifyIntroPayment(orderId: String, paymentId: String, signature: String): Boolean =
