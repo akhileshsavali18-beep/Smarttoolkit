@@ -58,6 +58,7 @@ import com.aistudio.smarttoolkit.tyvz.ui.theme.ProGoldBg
 fun ProUpgradeDialog(
     billingManager: BillingManager,
     onStartIntroPayment: () -> Unit,
+    onStartSubscriptionPayment: (String) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
@@ -168,6 +169,27 @@ fun ProUpgradeDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "ಪರಿಚಯಾತ್ಮಕ ಅವಧಿ ಮುಗಿದ ನಂತರ ಮಾತ್ರ ಮುಂದಿನ ಯೋಜನೆ ಸಕ್ರಿಯವಾಗುತ್ತದೆ.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        Button(
+                            onClick = { onStartSubscriptionPayment("monthly") },
+                            colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) { Text("₹99 / ತಿಂಗಳು", fontWeight = FontWeight.Bold) }
+                        Button(
+                            onClick = { onStartSubscriptionPayment("yearly") },
+                            colors = ButtonDefaults.buttonColors(containerColor = ApsBlue),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) { Text("₹799 / ವರ್ಷ", fontWeight = FontWeight.Bold) }
+                    }
                     if (billingStatus != null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = billingStatus.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
