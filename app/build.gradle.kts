@@ -19,6 +19,7 @@ android {
     targetSdk = 36
     versionCode = 10
     versionName = "2.8"
+    buildConfigField("String", "PAYMENT_API_BASE_URL", "\"\")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -103,6 +104,7 @@ dependencies {
   implementation(libs.play.services.ads)
   implementation(libs.user.messaging.platform)
   implementation(libs.billing)
+  implementation("com.razorpay:checkout:1.6.41")
   implementation(libs.zxing.core)
   implementation(libs.converter.moshi)
   // implementation(libs.firebase.ai)
