@@ -309,14 +309,14 @@ fun StickyBannerAd(
                             }
 
                             override fun onAdLoadFailed(error: LevelPlayAdError) {
-                                Log.w(TAG, "Banner load failed: $error")
+                                Log.w("StickyBannerAd", "Banner load failed: $error")
                                 adFailed = true
                             }
 
                             override fun onAdDisplayed(adInfo: LevelPlayAdInfo) = Unit
 
                             override fun onAdDisplayFailed(adInfo: LevelPlayAdInfo, error: LevelPlayAdError) {
-                                Log.w(TAG, "Banner display failed: $error")
+                                Log.w("StickyBannerAd", "Banner display failed: $error")
                                 adFailed = true
                             }
 
@@ -332,7 +332,7 @@ fun StickyBannerAd(
                     try {
                         banner.destroy()
                     } catch (error: Throwable) {
-                        Log.w(TAG, "Banner destroy failed", error)
+                        Log.w("StickyBannerAd", "Banner destroy failed", error)
                     }
                 },
                 modifier = Modifier
