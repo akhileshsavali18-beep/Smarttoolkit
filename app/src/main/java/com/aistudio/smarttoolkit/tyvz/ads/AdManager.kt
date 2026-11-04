@@ -3,7 +3,6 @@ package com.aistudio.smarttoolkit.tyvz.ads
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,73 +19,130 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.unity3d.mediation.LevelPlay
+import com.unity3d.mediation.LevelPlayAdError
+import com.unity3d.mediation.LevelPlayAdInfo
+import com.unity3d.mediation.LevelPlayAdSize
+import com.unity3d.mediation.LevelPlayBannerAdView
+import com.unity3d.mediation.LevelPlayBannerAdViewListener
+import com.unity3d.mediation.LevelPlayInitError
+import com.unity3d.mediation.LevelPlayInitListener
+import com.unity3d.mediation.LevelPlayInitRequest
+import com.unity3d.mediation.LevelPlayInterstitialAd
+import com.unity3d.mediation.LevelPlayInterstitialAdListener
+import com.unity3d.mediation.LevelPlayReward
+import com.unity3d.mediation.LevelPlayRewardedAd
+import com.unity3d.mediation.LevelPlayRewardedAdListener
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 object AdManager {
     private const val TAG = "AdManager"
 
-    private var interstitialAd: InterstitialAd? = null
-    private var isAdLoading = false
-    private var rewardedAd: RewardedAd? = null
-    private var isRewardedLoading = false
-    private var isInitialized = false
+    @Volatile private var initialized = false
+    @Volatile private var initializing = false
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized = _isInitialized.asStateFlow()
+
+    private var interstitialAd: LevelPlayInterstitialAd? = null
+    private var rewardedAd: LevelPlayRewardedAd? = null
+    private var interstitialLoading = false
+    private var rewardedLoading = false
+    private var pendingRewardCallback: ((Int, String) -> Unit)? = null
+    private var pendingDismissCallback: (() -> Unit)? = null
+    private var pendingFailureCallback: ((String) -> Unit)? = null
+
+    fun isInitializedForBanner(): Boolean = initialized
 
     fun initialize(context: Context) {
         if (!ConsentManager.canRequestAdsNow()) {
-            Log.d(TAG, "AdMob initialization skipped until UMP consent allows ads")
+            Log.d(TAG, "Waiting for privacy consent before LevelPlay initialization")
             return
         }
-        if (!isInitialized) {
-            try {
-                com.google.android.gms.ads.MobileAds.initialize(context.applicationContext) { status ->
-                    Log.d(TAG, "AdMob MobileAds initialized: $status")
-                    isInitialized = true
-                    loadInterstitialAd(context.applicationContext)
-                    loadRewardedAd(context.applicationContext)
+        if (initialized || initializing) return
+
+        initializing = true
+        try {
+            val request = LevelPlayInitRequest.Builder(AdConfig.APP_KEY).build()
+            LevelPlay.init(context.applicationContext, request, object : LevelPlayInitListener {
+                override fun onInitSuccess(configuration: com.unity3d.mediation.LevelPlayConfiguration) {
+                    initializing = false
+                    initialized = true
+                    _isInitialized.value = true
+                    Log.d(TAG, "LevelPlay initialized")
+                    createInterstitialAd()
+                    createRewardedAd()
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error initializing MobileAds", e)
-            }
+
+                override fun onInitFailed(error: LevelPlayInitError) {
+                    initializing = false
+                    initialized = false
+                    _isInitialized.value = false
+                    Log.e(TAG, "LevelPlay initialization failed: $error")
+                }
+            })
+        } catch (error: Throwable) {
+            initializing = false
+            Log.e(TAG, "LevelPlay initialization error", error)
         }
     }
 
-    fun loadInterstitialAd(context: Context) {
-        if (!ConsentManager.canRequestAdsNow()) return
-        if (interstitialAd != null || isAdLoading) return
+    private fun createInterstitialAd() {
+        if (!initialized || interstitialAd != null) return
+        val ad = LevelPlayInterstitialAd(AdConfig.INTERSTITIAL_AD_ID)
+        ad.setListener(object : LevelPlayInterstitialAdListener {
+            override fun onAdLoaded(adInfo: LevelPlayAdInfo) {
+                interstitialLoading = false
+                Log.d(TAG, "Interstitial loaded")
+            }
 
-        isAdLoading = true
+            override fun onAdLoadFailed(error: LevelPlayAdError) {
+                interstitialLoading = false
+                Log.w(TAG, "Interstitial load failed: $error")
+            }
+
+            override fun onAdDisplayed(adInfo: LevelPlayAdInfo) = Unit
+
+            override fun onAdDisplayFailed(error: LevelPlayAdError, adInfo: LevelPlayAdInfo) {
+                Log.w(TAG, "Interstitial display failed: $error")
+                pendingFailureCallback?.invoke(error.toString())
+                pendingFailureCallback = null
+                pendingDismissCallback?.invoke()
+                pendingDismissCallback = null
+                loadInterstitialAd()
+            }
+
+            override fun onAdClicked(adInfo: LevelPlayAdInfo) = Unit
+
+            override fun onAdClosed(adInfo: LevelPlayAdInfo) {
+                pendingDismissCallback?.invoke()
+                pendingDismissCallback = null
+                pendingFailureCallback = null
+                loadInterstitialAd()
+            }
+
+            override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) = Unit
+        })
+        interstitialAd = ad
+        loadInterstitialAd()
+    }
+
+    fun loadInterstitialAd(context: Context? = null) {
+        if (!initialized) {
+            context?.let(::initialize)
+            return
+        }
+        val ad = interstitialAd ?: run {
+            createInterstitialAd()
+            return
+        }
+        if (ad.isAdReady() || interstitialLoading) return
+        interstitialLoading = true
         try {
-            val adRequest = AdRequest.Builder().build()
-            InterstitialAd.load(
-                context.applicationContext,
-                AdConfig.INTERSTITIAL_AD_ID,
-                adRequest,
-                object : InterstitialAdLoadCallback() {
-                    override fun onAdLoaded(ad: InterstitialAd) {
-                        interstitialAd = ad
-                        isAdLoading = false
-                        Log.d(TAG, "Interstitial ad successfully loaded")
-                    }
-
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        interstitialAd = null
-                        isAdLoading = false
-                        Log.w(TAG, "Interstitial ad failed to load: ${error.message}")
-                    }
-                }
-            )
-        } catch (e: Throwable) {
-            Log.w(TAG, "Failed to load interstitial ad", e)
-            isAdLoading = false
+            ad.loadAd()
+        } catch (error: Throwable) {
+            interstitialLoading = false
+            Log.w(TAG, "Could not load interstitial", error)
         }
     }
 
@@ -97,83 +153,95 @@ object AdManager {
         onAdFailed: ((String) -> Unit)? = null
     ) {
         if (isPremium) {
-            // Premium users do not see ads
             onAdDismissed()
             return
         }
-
         val ad = interstitialAd
-        if (ad != null) {
-            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                override fun onAdDismissedFullScreenContent() {
-                    interstitialAd = null
-                    loadInterstitialAd(activity)
-                    onAdDismissed()
-                }
-
-                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    Log.w(TAG, "Interstitial ad failed to show: ${adError.message}")
-                    interstitialAd = null
-                    loadInterstitialAd(activity)
-                    onAdFailed?.invoke(adError.message)
-                    onAdDismissed()
-                }
-
-                override fun onAdShowedFullScreenContent() {
-                    Log.d(TAG, "Interstitial ad showed fullscreen")
-                }
-            }
-            try {
-                ad.show(activity)
-            } catch (e: Throwable) {
-                Log.w(TAG, "Error calling ad.show", e)
-                interstitialAd = null
-                loadInterstitialAd(activity)
-                onAdFailed?.invoke(e.message ?: "Unknown show error")
-                onAdDismissed()
-            }
-        } else {
-            // If ad is not ready, proceed smoothly without blocking the user
+        if (ad == null || !ad.isAdReady()) {
             loadInterstitialAd(activity)
             onAdDismissed()
+            return
+        }
+        pendingDismissCallback = onAdDismissed
+        pendingFailureCallback = onAdFailed
+        try {
+            ad.showAd(activity)
+        } catch (error: Throwable) {
+            pendingDismissCallback = null
+            pendingFailureCallback = null
+            onAdFailed?.invoke(error.message ?: "Unable to show interstitial")
+            onAdDismissed()
+            loadInterstitialAd()
         }
     }
 
-    fun isRewardedAdReady(): Boolean = rewardedAd != null
+    private fun createRewardedAd() {
+        if (!initialized || rewardedAd != null) return
+        val ad = LevelPlayRewardedAd(AdConfig.REWARDED_AD_ID)
+        ad.setListener(object : LevelPlayRewardedAdListener {
+            override fun onAdLoaded(adInfo: LevelPlayAdInfo) {
+                rewardedLoading = false
+                Log.d(TAG, "Rewarded ad loaded")
+            }
 
-    fun loadRewardedAd(context: Context, onLoaded: (() -> Unit)? = null) {
-        if (!ConsentManager.canRequestAdsNow()) return
-        if (rewardedAd != null) {
+            override fun onAdLoadFailed(error: LevelPlayAdError) {
+                rewardedLoading = false
+                Log.w(TAG, "Rewarded load failed: $error")
+            }
+
+            override fun onAdDisplayed(adInfo: LevelPlayAdInfo) = Unit
+
+            override fun onAdRewarded(reward: LevelPlayReward, adInfo: LevelPlayAdInfo) {
+                pendingRewardCallback?.invoke(reward.amount, reward.name)
+                pendingRewardCallback = null
+            }
+
+            override fun onAdDisplayFailed(error: LevelPlayAdError, adInfo: LevelPlayAdInfo) {
+                pendingFailureCallback?.invoke(error.toString())
+                pendingRewardCallback = null
+                pendingFailureCallback = null
+                pendingDismissCallback?.invoke()
+                pendingDismissCallback = null
+                loadRewardedAd()
+            }
+
+            override fun onAdClicked(adInfo: LevelPlayAdInfo) = Unit
+
+            override fun onAdClosed(adInfo: LevelPlayAdInfo) {
+                pendingDismissCallback?.invoke()
+                pendingDismissCallback = null
+                pendingFailureCallback = null
+                loadRewardedAd()
+            }
+
+            override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) = Unit
+        })
+        rewardedAd = ad
+        loadRewardedAd()
+    }
+
+    fun isRewardedAdReady(): Boolean = rewardedAd?.isAdReady() == true
+
+    fun loadRewardedAd(context: Context? = null, onLoaded: (() -> Unit)? = null) {
+        if (!initialized) {
+            context?.let(::initialize)
+            return
+        }
+        val ad = rewardedAd ?: run {
+            createRewardedAd()
+            return
+        }
+        if (ad.isAdReady()) {
             onLoaded?.invoke()
             return
         }
-        if (isRewardedLoading) return
-
-        isRewardedLoading = true
+        if (rewardedLoading) return
+        rewardedLoading = true
         try {
-            val adRequest = AdRequest.Builder().build()
-            RewardedAd.load(
-                context.applicationContext,
-                AdConfig.REWARDED_AD_ID,
-                adRequest,
-                object : RewardedAdLoadCallback() {
-                    override fun onAdLoaded(ad: RewardedAd) {
-                        rewardedAd = ad
-                        isRewardedLoading = false
-                        Log.d(TAG, "Rewarded ad successfully loaded")
-                        onLoaded?.invoke()
-                    }
-
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        rewardedAd = null
-                        isRewardedLoading = false
-                        Log.w(TAG, "Rewarded ad failed to load: ${error.message}")
-                    }
-                }
-            )
-        } catch (e: Throwable) {
-            Log.w(TAG, "Failed to initiate loadRewardedAd", e)
-            isRewardedLoading = false
+            ad.loadAd()
+        } catch (error: Throwable) {
+            rewardedLoading = false
+            Log.w(TAG, "Could not load rewarded ad", error)
         }
     }
 
@@ -188,43 +256,24 @@ object AdManager {
             onAdDismissed()
             return
         }
-
         val ad = rewardedAd
-        if (ad != null) {
-            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                override fun onAdDismissedFullScreenContent() {
-                    rewardedAd = null
-                    loadRewardedAd(activity)
-                    onAdDismissed()
-                }
-
-                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    Log.w(TAG, "Rewarded ad failed to show: ${adError.message}")
-                    rewardedAd = null
-                    loadRewardedAd(activity)
-                    onAdFailed?.invoke(adError.message)
-                    onAdDismissed()
-                }
-
-                override fun onAdShowedFullScreenContent() {
-                    Log.d(TAG, "Rewarded ad showed fullscreen")
-                }
-            }
-            try {
-                ad.show(activity) { rewardItem ->
-                    Log.d(TAG, "User earned reward: ${rewardItem.amount} ${rewardItem.type}")
-                    onUserEarnedReward(rewardItem.amount, rewardItem.type)
-                }
-            } catch (e: Throwable) {
-                Log.w(TAG, "Error showing rewarded ad", e)
-                rewardedAd = null
-                loadRewardedAd(activity)
-                onAdFailed?.invoke(e.message ?: "Failed to display ad")
-                onAdDismissed()
-            }
-        } else {
+        if (ad == null || !ad.isAdReady()) {
             loadRewardedAd(activity)
-            onAdFailed?.invoke("Video ad is still loading. Please try again in a few seconds!")
+            onAdFailed?.invoke("Video ad is still loading. Please try again shortly.")
+            return
+        }
+        pendingRewardCallback = onUserEarnedReward
+        pendingDismissCallback = onAdDismissed
+        pendingFailureCallback = onAdFailed
+        try {
+            ad.showAd(activity)
+        } catch (error: Throwable) {
+            pendingRewardCallback = null
+            pendingDismissCallback = null
+            pendingFailureCallback = null
+            onAdFailed?.invoke(error.message ?: "Unable to show rewarded ad")
+            onAdDismissed()
+            loadRewardedAd()
         }
     }
 }
@@ -235,11 +284,12 @@ fun StickyBannerAd(
     modifier: Modifier = Modifier
 ) {
     val canRequestAds by ConsentManager.canRequestAds.collectAsState()
-    if (isPremium || !canRequestAds) return
+    val levelPlayReady by AdManager.isInitialized.collectAsState()
+    if (isPremium || !canRequestAds || !levelPlayReady) return
 
-    var isAdFailed by remember { mutableStateOf(false) }
+    var adFailed by remember { mutableStateOf(false) }
 
-    if (!isAdFailed) {
+    if (!adFailed) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -249,37 +299,40 @@ fun StickyBannerAd(
         ) {
             AndroidView(
                 factory = { context ->
-                    AdView(context).apply {
-                        setAdSize(AdSize.BANNER)
-                        adUnitId = AdConfig.BANNER_AD_ID
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
-                        )
-                        adListener = object : com.google.android.gms.ads.AdListener() {
-                            override fun onAdFailedToLoad(error: LoadAdError) {
-                                Log.w("StickyBannerAd", "Banner ad failed to load: ${error.message}")
-                                isAdFailed = true
+                    val config = LevelPlayBannerAdView.Config.Builder()
+                        .setAdSize(LevelPlayAdSize.BANNER)
+                        .build()
+                    LevelPlayBannerAdView(context, AdConfig.BANNER_AD_ID, config).apply {
+                        setBannerListener(object : LevelPlayBannerAdViewListener {
+                            override fun onAdLoaded(adInfo: LevelPlayAdInfo) {
+                                adFailed = false
                             }
 
-                            override fun onAdLoaded() {
-                                isAdFailed = false
+                            override fun onAdLoadFailed(error: LevelPlayAdError) {
+                                Log.w(TAG, "Banner load failed: $error")
+                                adFailed = true
                             }
-                        }
-                        try {
-                            loadAd(AdRequest.Builder().build())
-                        } catch (e: Throwable) {
-                            Log.w("StickyBannerAd", "Failed to load banner ad request", e)
-                            isAdFailed = true
-                        }
+
+                            override fun onAdDisplayed(adInfo: LevelPlayAdInfo) = Unit
+
+                            override fun onAdDisplayFailed(adInfo: LevelPlayAdInfo, error: LevelPlayAdError) {
+                                Log.w(TAG, "Banner display failed: $error")
+                                adFailed = true
+                            }
+
+                            override fun onAdClicked(adInfo: LevelPlayAdInfo) = Unit
+                            override fun onAdExpanded(adInfo: LevelPlayAdInfo) = Unit
+                            override fun onAdCollapsed(adInfo: LevelPlayAdInfo) = Unit
+                            override fun onAdLeftApplication(adInfo: LevelPlayAdInfo) = Unit
+                        })
+                        loadAd()
                     }
                 },
-                update = { },
-                onRelease = { adView ->
+                onRelease = { banner ->
                     try {
-                        adView.destroy()
-                    } catch (e: Throwable) {
-                        Log.w("StickyBannerAd", "Failed to destroy adView on release", e)
+                        banner.destroy()
+                    } catch (error: Throwable) {
+                        Log.w(TAG, "Banner destroy failed", error)
                     }
                 },
                 modifier = Modifier
