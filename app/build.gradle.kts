@@ -102,6 +102,9 @@ dependencies {
   implementation(libs.androidx.room.runtime)
   implementation(libs.coil.compose)
   implementation(libs.play.services.ads)
+  // Unity Ads demand is integrated through AdMob bidding mediation.
+  implementation(libs.unity.ads.sdk)
+  implementation(libs.unity.ads.mediation)
   implementation(libs.user.messaging.platform)
   implementation(libs.billing)
   implementation("com.razorpay:checkout:1.6.41")
