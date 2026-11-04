@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
       }
     }
 
-    // Refresh privacy/consent information before initializing AdMob.
+    // Refresh privacy/consent information before initializing Unity LevelPlay.
     ConsentManager.requestConsent(this) {
       runOnUiThread {
         if (ConsentManager.canRequestAdsNow()) {
